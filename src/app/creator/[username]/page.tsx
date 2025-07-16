@@ -21,10 +21,10 @@ interface Props {
   params: { username: string };
 }
 
-// Utility to check if Stripe account is fully connected
+// ✅ Stripe utility
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
-  if (!stripeAccountId) return false;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: '2024-04-10',
   });
 
@@ -136,7 +136,7 @@ export default async function CreatorProfile({ params }: Props) {
           </div>
         </div>
 
-        {/* Creator-only section */}
+        {/* Creator-only settings */}
         {isOwner && (
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
@@ -155,7 +155,7 @@ export default async function CreatorProfile({ params }: Props) {
           </div>
         )}
 
-        {/* Subscribe buttons */}
+        {/* Subscribe CTA */}
         {!isOwner && !isSubscribed && (
           <div className="flex justify-center mt-6">
             <SubscribeButtons
@@ -167,7 +167,7 @@ export default async function CreatorProfile({ params }: Props) {
         )}
       </div>
 
-      {/* Create Post */}
+      {/* Post Creation */}
       {isOwner && (
         <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">
@@ -177,12 +177,12 @@ export default async function CreatorProfile({ params }: Props) {
         </div>
       )}
 
-      {/* Posts Section */}
+      {/* Creator Posts */}
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
 
         <div className="space-y-6">
-          {user.posts.length === 0 ? (
+          {user.posts?.length === 0 ? (
             <p className="text-gray-400 italic">No posts yet.</p>
           ) : (
             user.posts.map((post) => {
