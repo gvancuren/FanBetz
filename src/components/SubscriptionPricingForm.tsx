@@ -82,4 +82,15 @@ export default function SubscriptionPricingForm() {
         Save Subscription
       </button>
 
-      {success && <
+      {success && (
+        <p className="text-green-400 font-semibold">
+          Subscription price saved successfully!
+        </p>
+      )}
+
+      {error && (
+        <p className="text-red-500 font-semibold">Error: {error}</p>
+      )}
+    </form>
+  );
+}
