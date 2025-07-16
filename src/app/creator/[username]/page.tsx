@@ -17,12 +17,17 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
+interface Props {
+  params: { username: string };
+}
+
 // Utility to check if Stripe account is fully connected
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-04-10',
   });
+
   try {
     const account = await stripe.accounts.retrieve(stripeAccountId);
     return account.charges_enabled && account.details_submitted;
@@ -32,9 +37,8 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function CreatorProfile({ params }: { params: { username: string } }) {
-  const { username } = await params;
-  const decodedUsername = decodeURIComponent(username).trim();
+export default async function CreatorProfile({ params }: Props) {
+  const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
@@ -86,6 +90,7 @@ export default async function CreatorProfile({ params }: { params: { username: s
     <div className="max-w-5xl mx-auto px-6 py-12 text-white space-y-10">
       <RefreshOnUnlock />
 
+      {/* Profile Header */}
       <div className="bg-zinc-900 p-10 rounded-2xl shadow-xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start sm:gap-8">
           {isOwner ? (
@@ -131,6 +136,7 @@ export default async function CreatorProfile({ params }: { params: { username: s
           </div>
         </div>
 
+        {/* Creator-only section */}
         {isOwner && (
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
@@ -149,6 +155,7 @@ export default async function CreatorProfile({ params }: { params: { username: s
           </div>
         )}
 
+        {/* Subscribe buttons */}
         {!isOwner && !isSubscribed && (
           <div className="flex justify-center mt-6">
             <SubscribeButtons
@@ -160,6 +167,7 @@ export default async function CreatorProfile({ params }: { params: { username: s
         )}
       </div>
 
+      {/* Create Post */}
       {isOwner && (
         <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">
@@ -169,6 +177,7 @@ export default async function CreatorProfile({ params }: { params: { username: s
         </div>
       )}
 
+      {/* Posts Section */}
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
 
