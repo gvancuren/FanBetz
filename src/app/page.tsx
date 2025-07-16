@@ -1,103 +1,160 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import LikeButton from '@/components/LikeButton';
+import CommentList from '@/components/CommentList';
+import CommentForm from '@/components/CommentForm';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const featuredCreators = await prisma.user.findMany({
+    where: { isCreator: true },
+    include: {
+      followersList: true,
+    },
+  });
+
+  const topCreators = featuredCreators
+    .sort((a, b) => b.followersList.length - a.followersList.length)
+    .slice(0, 4);
+
+  const trendingPosts = await prisma.post.findMany({
+    orderBy: [
+      { likes: { _count: 'desc' } },
+      { createdAt: 'desc' },
+    ],
+    take: 6,
+    include: {
+      user: true,
+      likes: true,
+      comments: { include: { user: true } },
+      unlocks: true,
+    },
+  });
+
+  const sports = ['NFL', 'NBA', 'MLB', 'NHL', 'UFC', 'Soccer', 'Golf', 'NCAA'];
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white px-6 py-12 space-y-24">
+      {/* Hero Section */}
+      <section className="text-center space-y-6 max-w-4xl mx-auto">
+        <h1 className="text-6xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
+          FanBetz.com
+        </h1>
+        <p className="text-2xl text-gray-300">
+          Bet Smarter. Win Bigger.
+        </p>
+        <p className="text-lg text-gray-400">
+          Buy expert picks from top-ranked sports bettors.
+        </p>
+        <Link href="/signup">
+          <button className="mt-6 px-10 py-4 bg-yellow-400 text-black text-lg font-bold rounded-xl hover:bg-yellow-300 shadow-xl transition-transform transform hover:scale-105">
+            Get Started
+          </button>
+        </Link>
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Sports Categories Scroll */}
+      <section className="overflow-x-auto whitespace-nowrap py-4 scrollbar-hide">
+        <div className="flex gap-4 justify-center px-2 sm:px-6">
+          {sports.map((sport) => (
+            <Link
+              key={sport}
+              href={`/${sport.toLowerCase()}`}
+              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold"
+            >
+              {sport}
+            </Link>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* Featured Creators */}
+      <section className="max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">Top Creators</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-14 justify-center items-start px-4">
+          {topCreators.map((creator, i) => (
+            <Link
+              href={`/creator/${creator.name}`}
+              key={creator.id}
+              className="group bg-zinc-900 p-6 rounded-2xl border border-yellow-500 shadow-xl text-center hover:shadow-yellow-400/30 transition duration-300 transform hover:scale-105 w-full max-w-xs mx-auto"
+            >
+              <div className="relative w-40 h-40 mx-auto mb-5">
+                <img
+                  src={creator.profileImage || '/default-avatar.png'}
+                  alt={creator.name}
+                  className="w-full h-full object-cover border-4 border-yellow-400 shadow-md bg-zinc-800 rounded-lg"
+                />
+              </div>
+              <h3 className="text-xl font-bold text-yellow-400">{creator.name}</h3>
+              <p className="text-sm text-gray-400">{creator.followersList.length} followers</p>
+              <span className="mt-2 inline-block text-xs text-black bg-yellow-400 px-3 py-1 rounded-full font-semibold shadow">
+                #{i + 1} Ranked
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Trending Posts */}
+      <section className="max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">🔥 Trending Picks</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {trendingPosts.map((post) => {
+            const isUnlocked = post.price === 0;
+            return (
+              <div
+                key={post.id}
+                className="bg-zinc-900 p-6 rounded-2xl border border-zinc-700 hover:shadow-xl transition space-y-4"
+              >
+                <h3 className="text-xl font-bold text-white line-clamp-2">{post.title}</h3>
+                <p className="text-sm text-yellow-500">
+                  by{' '}
+                  <Link href={`/creator/${post.user.name}`} className="underline hover:text-yellow-300">
+                    {post.user.name}
+                  </Link>{' '}
+                  — {post.price ? `$${(post.price / 100).toFixed(2)}` : 'Free'}
+                </p>
+
+                {isUnlocked ? (
+                  <>
+                    <p className="text-gray-300 whitespace-pre-wrap text-sm line-clamp-4">{post.content}</p>
+                    <LikeButton
+                      postId={post.id}
+                      userId={post.user.id}
+                      hasLiked={false}
+                      likeCount={post.likes.length}
+                    />
+                    <CommentList comments={post.comments} />
+                    <CommentForm postId={post.id} />
+                  </>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center rounded-lg">
+                        <p className="text-gray-400 italic text-sm">Locked — Unlock to view</p>
+                      </div>
+                      <div className="h-24 bg-zinc-800 rounded-lg" />
+                    </div>
+                    <LikeButton
+                      postId={post.id}
+                      userId={post.user.id}
+                      hasLiked={false}
+                      likeCount={post.likes.length}
+                    />
+                    <Link
+                      href={`/creator/${post.user.name}`}
+                      className="mt-2 inline-block text-yellow-400 font-medium hover:underline"
+                    >
+                      Go to Profile to Unlock
+                    </Link>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </main>
   );
 }

@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int             @id @default(autoincrement())
+  email           String          @unique
+  name            String          @unique
+  password        String?
+  isCreator       Boolean         @default(false)
+
+  profileImage    String?
+  bio             String?
+  createdAt       DateTime        @default(now())
+
+  weeklyPrice     Int?
+  monthlyPrice    Int?
+  stripeProductId String?
+  weeklyPriceId   String?
+  monthlyPriceId  String?
+
+  earnings        Int             @default(0)
+  payoutTotal     Int             @default(0)
+  stripeAccountId String?
+
+  picks           Pick[]
+  posts           Post[]
+  subscriptions   Subscription[]  @relation("Subscriber")
+  subscribers     Subscription[]  @relation("Creator")
+  postUnlocks     PostUnlock[]
+  comments        Comment[]
+  postLikes       PostLike[]
+  followingList   Follow[]        @relation("Following")
+  followersList   Follow[]        @relation("Followers")
+}
+
+model Follow {
+  id             Int    @id @default(autoincrement())
+  follower       User   @relation("Following", fields: [followerId], references: [id])
+  followerId     Int
+  following      User   @relation("Followers", fields: [followingId], references: [id])
+  followingId    Int
+
+  @@unique([followerId, followingId])
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  content    String
+  imageUrl   String?
+  price      Int?
+  category   Category?  // ✅ Now uses an enum!
+  createdAt  DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  userId     Int
+
+  unlocks    PostUnlock[]
+  comments   Comment[]
+  likes      PostLike[]
+}
+
+model Pick {
+  id         Int      @id @default(autoincrement())
+  sport      String
+  teams      String
+  market     String
+  prediction String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+}
+
+model PostUnlock {
+  id      Int   @id @default(autoincrement())
+  user    User  @relation(fields: [userId], references: [id])
+  userId  Int
+  post    Post  @relation(fields: [postId], references: [id])
+  postId  Int
+}
+
+model Subscription {
+  id                   Int      @id @default(autoincrement())
+  subscriber           User     @relation("Subscriber", fields: [subscriberId], references: [id])
+  subscriberId         Int
+  creator              User     @relation("Creator", fields: [creatorId], references: [id])
+  creatorId            Int
+  plan                 String
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+  stripeSubscriptionId String?
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+}
+
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+
+  @@unique([userId, postId])
+}
+
+enum Category {
+  NFL
+  NBA
+  MLB
+  NHL
+  UFC
+  Soccer
+  Golf
+  NCAA
+}
