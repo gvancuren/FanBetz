@@ -17,7 +17,6 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// ✅ Correct typing for dynamic route props
 interface CreatorProfileProps {
   params: {
     username: string;
