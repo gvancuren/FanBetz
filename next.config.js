@@ -5,10 +5,10 @@ const nextConfig = {
   },
   reactStrictMode: true,
   eslint: {
-    ignoreDuringBuilds: true, // ✅ This prevents Vercel from blocking deploys due to ESLint errors
+    ignoreDuringBuilds: true, // ✅ Prevents Vercel from blocking deploys due to ESLint errors
   },
   experimental: {
-    serverActions: true,
+    serverActions: {}, // ✅ Fixes Vercel warning (was: true)
   },
 };
 
