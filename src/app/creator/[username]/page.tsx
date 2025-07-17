@@ -14,12 +14,11 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
-import type { PageProps } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-// ✅ Properly typed props for Next.js 15 dynamic route
-interface CreatorProfileProps extends PageProps {
+// ✅ Correct typing for dynamic route props
+interface CreatorProfileProps {
   params: {
     username: string;
   };
