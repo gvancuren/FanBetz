@@ -17,12 +17,6 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-interface CreatorProfileProps {
-  params: {
-    username: string;
-  };
-}
-
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -38,7 +32,11 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function CreatorProfile({ params }: CreatorProfileProps) {
+export default async function CreatorProfile({
+  params,
+}: {
+  params: { username: string };
+}) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
