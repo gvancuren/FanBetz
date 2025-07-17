@@ -17,7 +17,22 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// ✅ Fix type error from Vercel – use explicit params without custom interface
+// ✅ Moved outside the component to prevent type errors in Next.js 15+
+async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
+  if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2024-04-10',
+  });
+
+  try {
+    const account = await stripe.accounts.retrieve(stripeAccountId);
+    return account.charges_enabled && account.details_submitted;
+  } catch (err) {
+    console.error('Stripe check failed:', err);
+    return false;
+  }
+}
+
 export default async function CreatorProfile({
   params,
 }: {
@@ -66,22 +81,6 @@ export default async function CreatorProfile({
   const now = new Date();
   const activeSubscription = user.subscribers.find((sub) => new Date(sub.expiresAt) > now);
   const isSubscribed = !!activeSubscription;
-
-  // ✅ Stripe utility
-  async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
-    if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-04-10',
-    });
-
-    try {
-      const account = await stripe.accounts.retrieve(stripeAccountId);
-      return account.charges_enabled && account.details_submitted;
-    } catch (err) {
-      console.error('Stripe check failed:', err);
-      return false;
-    }
-  }
 
   const stripeReady = user.stripeAccountId
     ? await isStripeFullyConnected(user.stripeAccountId)
