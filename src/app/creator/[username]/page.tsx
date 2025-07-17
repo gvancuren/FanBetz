@@ -14,10 +14,17 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
+import type { PageProps } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-// ✅ Moved outside the component to prevent type errors in Next.js 15+
+// ✅ Properly typed props for Next.js 15 dynamic route
+interface CreatorProfileProps extends PageProps {
+  params: {
+    username: string;
+  };
+}
+
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -33,11 +40,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function CreatorProfile({
-  params,
-}: {
-  params: { username: string };
-}) {
+export default async function CreatorProfile({ params }: CreatorProfileProps) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
