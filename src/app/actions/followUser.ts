@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export async function followUser(creatorId: number) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions); // ✅ Correct usage
   const userId = session?.user?.id;
 
   if (!userId) throw new Error('Not authenticated');
@@ -32,6 +32,5 @@ export async function followUser(creatorId: number) {
     });
   }
 
-  // ✅ Convert creatorId to a string (in case it's a number) to avoid path mismatch
   revalidatePath(`/creator/${String(creatorId)}`);
 }
