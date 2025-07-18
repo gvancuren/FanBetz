@@ -10,7 +10,7 @@ export async function followUser(creatorId: number) {
   const userId = session?.user?.id;
 
   if (!userId) throw new Error('Not authenticated');
-  if (userId === creatorId) throw new Error('Cannot follow yourself');
+  if (Number(userId) === creatorId) throw new Error('Cannot follow yourself');
 
   const existingFollow = await prisma.follow.findFirst({
     where: {
@@ -20,14 +20,10 @@ export async function followUser(creatorId: number) {
   });
 
   if (existingFollow) {
-    // Unfollow
     await prisma.follow.delete({
-      where: {
-        id: existingFollow.id,
-      },
+      where: { id: existingFollow.id },
     });
   } else {
-    // Follow
     await prisma.follow.create({
       data: {
         followerId: Number(userId),
@@ -36,5 +32,6 @@ export async function followUser(creatorId: number) {
     });
   }
 
-  revalidatePath(`/creator/${creatorId}`);
+  // ✅ Convert creatorId to a string (in case it's a number) to avoid path mismatch
+  revalidatePath(`/creator/${String(creatorId)}`);
 }
