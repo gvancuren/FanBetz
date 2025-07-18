@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-06-30.basil', // ✅ Updated to match Stripe types
 });
 
 /**
@@ -39,7 +39,7 @@ export async function createStripePricesForCreator(user: {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        weeklyPriceId: weeklyPrice.id, // ✅ Fixed field name
+        weeklyPriceId: weeklyPrice.id,
       },
     });
   }
@@ -56,7 +56,7 @@ export async function createStripePricesForCreator(user: {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        monthlyPriceId: monthlyPrice.id, // ✅ Fixed field name
+        monthlyPriceId: monthlyPrice.id,
       },
     });
   }
