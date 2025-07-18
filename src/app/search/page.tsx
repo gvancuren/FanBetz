@@ -1,16 +1,12 @@
+import type { PageProps } from 'next';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-interface SearchPageProps {
-  searchParams: { q?: string | string[] };
-}
-
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const raw = searchParams.q;
-  const query = typeof raw === 'string' ? raw.trim() : '';
+export default async function SearchPage({ searchParams }: PageProps) {
+  const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
 
   if (!query || query.length === 0) {
     return notFound();
@@ -30,11 +26,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         id: true,
         name: true,
         profileImage: true,
-        _count: {
-          select: {
-            followersList: true,
-          },
-        },
+        followers: true,
       },
     }),
     prisma.post.findMany({
@@ -45,90 +37,68 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         ],
       },
       take: 10,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        user: {
-          select: {
-            name: true,
-          },
-        },
+      include: {
+        user: true,
       },
     }),
   ]);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12 text-white space-y-12">
-      <h1 className="text-3xl font-bold border-b border-zinc-700 pb-2">
-        Search Results for <span className="text-yellow-400">&ldquo;{query}&rdquo;</span>
-      </h1>
+    <div className="min-h-screen px-6 py-16 text-white">
+      <h1 className="text-4xl font-bold text-yellow-400 mb-4">Search Results</h1>
+      <p className="text-gray-300 text-lg mb-10">Showing results for: <strong>{query}</strong></p>
 
-      {/* Creators */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">👤 Creators</h2>
-        {creators.length === 0 ? (
-          <p className="text-gray-400 italic">No creators found.</p>
-        ) : (
-          <ul className="grid sm:grid-cols-2 gap-4">
-            {creators.map((creator) => (
-              <li
-                key={creator.id}
-                className="bg-zinc-800 p-4 rounded-xl border border-zinc-700 flex items-center gap-4"
-              >
-                <img
-                  src={creator.profileImage || '/default-avatar.png'}
-                  alt={`${creator.name} avatar`}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <Link
-                    href={`/creator/${creator.name}`}
-                    className="text-yellow-400 text-lg font-semibold hover:underline"
-                  >
-                    {creator.name}
-                  </Link>
-                  <p className="text-sm text-gray-400">
-                    Followers: {creator._count.followersList}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Posts */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">📄 Posts</h2>
-        {posts.length === 0 ? (
-          <p className="text-gray-400 italic">No posts found.</p>
-        ) : (
-          <ul className="space-y-4">
-            {posts.map((post) => (
-              <li
-                key={post.id}
-                className="bg-zinc-800 p-4 rounded-xl border border-zinc-700"
-              >
+      <div className="space-y-12">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Creators</h2>
+          {creators.length === 0 ? (
+            <p className="text-gray-400 italic">No creators found.</p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {creators.map((creator) => (
                 <Link
-                  href={`/creator/${post.user.name}#post-${post.id}`}
-                  className="text-yellow-300 font-medium hover:underline"
+                  key={creator.id}
+                  href={`/creator/${creator.name}`}
+                  className="block bg-zinc-900 p-4 rounded-xl hover:shadow-xl border border-zinc-700"
                 >
-                  {post.title}
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src={creator.profileImage || '/default-avatar.png'}
+                      alt={creator.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400"
+                    />
+                    <div>
+                      <p className="text-xl font-bold">{creator.name}</p>
+                      <p className="text-sm text-gray-400">{creator.followers.length} followers</p>
+                    </div>
+                  </div>
                 </Link>
-                <p className="text-sm text-gray-400 mt-1">
-                  Creator: <span className="text-white">{post.user.name}</span>
-                </p>
-                <p className="text-gray-300 text-sm mt-2">
-                  {post.content.length > 120
-                    ? `${post.content.slice(0, 120)}...`
-                    : post.content}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Posts</h2>
+          {posts.length === 0 ? (
+            <p className="text-gray-400 italic">No posts found.</p>
+          ) : (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/creator/${post.user.name}`}
+                  className="block bg-zinc-900 p-5 rounded-xl hover:shadow-xl border border-zinc-700"
+                >
+                  <h3 className="text-xl font-semibold">{post.title}</h3>
+                  <p className="text-sm text-gray-400 mt-1">By {post.user.name}</p>
+                  <p className="text-gray-300 mt-2 line-clamp-3">{post.content}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
