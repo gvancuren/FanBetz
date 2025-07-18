@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcrypt';
-import { AuthOptions } from 'next-auth';
-import { getCsrfToken } from 'next-auth/react';
+import bcrypt from 'bcryptjs'; // ✅ Replaced bcrypt with bcryptjs
 import { cookies } from 'next/headers';
 
-// ✅ Updated to use signIn programmatically
 export async function POST(request: Request) {
   try {
     const { email: rawEmail, name: rawName, password, isCreator } = await request.json();
@@ -45,11 +42,11 @@ export async function POST(request: Request) {
       },
     });
 
-    // ✅ Auto-login using programmatic redirect to credentials provider
+    // Auto-login using redirect to credentials provider
     const formBody = new URLSearchParams({
       email,
       password,
-      callbackUrl: `/creator/${encodeURIComponent(name)}`, // Redirect to profile
+      callbackUrl: `/creator/${encodeURIComponent(name)}`,
     });
 
     return NextResponse.redirect(
