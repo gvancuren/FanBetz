@@ -18,10 +18,10 @@ export async function likePost(postId: number, userId: number) {
 
   if (!typedUser?.id || typedUser.id !== userId) {
     console.error('Unauthorized like attempt');
-    return; // prevent redirect or error
+    return;
   }
 
-  const existingLike = await prisma.like.findFirst({
+  const existingLike = await prisma.postLike.findFirst({
     where: {
       userId: typedUser.id,
       postId,
@@ -29,11 +29,11 @@ export async function likePost(postId: number, userId: number) {
   });
 
   if (existingLike) {
-    await prisma.like.delete({
+    await prisma.postLike.delete({
       where: { id: existingLike.id },
     });
   } else {
-    await prisma.like.create({
+    await prisma.postLike.create({
       data: {
         userId: typedUser.id,
         postId,
@@ -41,5 +41,5 @@ export async function likePost(postId: number, userId: number) {
     });
   }
 
-  revalidatePath('/');
+  revalidatePath(`/creator/${typedUser.id}`);
 }
