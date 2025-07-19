@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-06-30.basil', // ✅ Updated to match latest Stripe type
 });
 
 export async function POST() {
@@ -18,7 +18,9 @@ export async function POST() {
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
   if (user?.stripeAccountId) {
-    return NextResponse.json({ url: `https://dashboard.stripe.com/connect/accounts/${user.stripeAccountId}` });
+    return NextResponse.json({
+      url: `https://dashboard.stripe.com/connect/accounts/${user.stripeAccountId}`,
+    });
   }
 
   const account = await stripe.accounts.create({
