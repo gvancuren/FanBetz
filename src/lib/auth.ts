@@ -1,3 +1,4 @@
+import type { AuthOptions } from 'next-auth'; // ✅ Add type
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -5,7 +6,7 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -32,7 +33,6 @@ export const authOptions = {
           throw new Error('Incorrect Password');
         }
 
-        // ✅ Return only serializable user fields
         return {
           id: user.id,
           email: user.email,
@@ -45,7 +45,6 @@ export const authOptions = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
