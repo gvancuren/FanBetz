@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers'; // ✅ Required for App Router context
 
 export async function followUser(creatorId: number) {
-  const session = await getServerSession(authOptions); // ✅ Correct usage
+  const session = await getServerSession(authOptions, { cookies: cookies() }); // ✅ Corrected usage
   const userId = session?.user?.id;
 
   if (!userId) throw new Error('Not authenticated');
