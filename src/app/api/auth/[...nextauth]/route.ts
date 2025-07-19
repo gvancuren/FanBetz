@@ -30,9 +30,9 @@ const handler = NextAuth({
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        // ✅ Ensure we return exactly what NextAuth expects
+        // ✅ Return object with required shape
         return {
-          id: user.id.toString(), // 🔥 fix: cast number to string
+          id: user.id.toString(),
           name: user.name,
           email: user.email,
           image: user.profileImage || null,
@@ -50,13 +50,15 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.name = user.name;
+        token.name = user.name ?? null;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token?.id) session.user.id = token.id as string;
-      if (token?.name) session.user.name = token.name as string;
+      if (session.user) {
+        if (token?.id) session.user.id = token.id as string;
+        if (token?.name) session.user.name = token.name as string;
+      }
       return session;
     },
     async redirect({ baseUrl, url }) {
