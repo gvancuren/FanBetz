@@ -5,13 +5,22 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil', // ✅ Updated to match Stripe types
+  apiVersion: '2025-06-30.basil',
 });
+
+// ✅ Add proper user typing
+interface CustomUser {
+  id: number;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
+  const user = session?.user as CustomUser | undefined;
 
-  if (!session || !session.user?.id) {
+  if (!user?.id) {
     console.error('❌ Unauthorized: no session found');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -65,7 +74,7 @@ export async function POST(req: Request) {
           ],
       payment_intent_data: !isSubscription
         ? {
-            application_fee_amount: Math.round(amount * 0.2), // 20% platform fee
+            application_fee_amount: Math.round(amount * 0.2),
             transfer_data: {
               destination: creator.stripeAccountId,
             },
@@ -81,7 +90,7 @@ export async function POST(req: Request) {
         : undefined,
       metadata: {
         creatorId: String(creatorId),
-        userId: String(session.user.id),
+        userId: String(user.id), // ✅ FIXED: typed user ID
         type,
         postId: postId || '',
       },
