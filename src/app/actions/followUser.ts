@@ -7,14 +7,16 @@ import { revalidatePath } from 'next/cache';
 
 export async function followUser(creatorId: number) {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
+  const user = session?.user as { id: number; name?: string; email?: string };
+
+  const userId = user?.id;
 
   if (!userId) throw new Error('Not authenticated');
-  if (Number(userId) === creatorId) throw new Error('Cannot follow yourself');
+  if (userId === creatorId) throw new Error('Cannot follow yourself');
 
   const existingFollow = await prisma.follow.findFirst({
     where: {
-      followerId: Number(userId),
+      followerId: userId,
       followingId: creatorId,
     },
   });
@@ -26,7 +28,7 @@ export async function followUser(creatorId: number) {
   } else {
     await prisma.follow.create({
       data: {
-        followerId: Number(userId),
+        followerId: userId,
         followingId: creatorId,
       },
     });
