@@ -18,7 +18,7 @@ const handler = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
@@ -30,7 +30,13 @@ const handler = NextAuth({
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        return user;
+        // ✅ Ensure we return exactly what NextAuth expects
+        return {
+          id: user.id.toString(), // 🔥 fix: cast number to string
+          name: user.name,
+          email: user.email,
+          image: user.profileImage || null,
+        };
       },
     }),
   ],
@@ -44,34 +50,19 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.name = user.name; // store username for redirect
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token?.id) session.user.id = token.id;
-      if (token?.name) session.user.name = token.name;
+      if (token?.id) session.user.id = token.id as string;
+      if (token?.name) session.user.name = token.name as string;
       return session;
     },
     async redirect({ baseUrl, url }) {
-      // This handles redirecting after signIn() completes
       if (url === '/dashboard' || url === '/') {
-        // Check user in DB based on token from session
-        try {
-          const user = await prisma.user.findUnique({
-            where: { name: url.split('creator/')[1] ?? '' },
-          });
-
-          if (user?.isCreator && user.name) {
-            return `${baseUrl}/creator/${encodeURIComponent(user.name)}`;
-          }
-        } catch (e) {
-          console.error('Redirect error:', e);
-        }
-
-        return baseUrl;
+        return `${baseUrl}/`;
       }
-
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
