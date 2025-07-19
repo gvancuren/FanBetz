@@ -1,36 +1,45 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { authOptions } from '@/lib/auth';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
+
+interface CustomUser {
+  id: number;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
 
 export async function likePost(postId: number, userId: number) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.id !== userId) {
+  const typedUser = session?.user as CustomUser | undefined;
+
+  if (!typedUser?.id || typedUser.id !== userId) {
     console.error('Unauthorized like attempt');
-    return; // prevent redirect
+    return; // prevent redirect or error
   }
 
-  try {
-    const existing = await prisma.postLike.findFirst({
-      where: {
+  const existingLike = await prisma.like.findFirst({
+    where: {
+      userId: typedUser.id,
+      postId,
+    },
+  });
+
+  if (existingLike) {
+    await prisma.like.delete({
+      where: { id: existingLike.id },
+    });
+  } else {
+    await prisma.like.create({
+      data: {
+        userId: typedUser.id,
         postId,
-        userId,
       },
     });
-
-    if (!existing) {
-      await prisma.postLike.create({
-        data: { postId, userId },
-      });
-
-      // Optional: revalidate cache if you're showing post like count on static pages
-      revalidatePath(`/creator`);
-    }
-  } catch (err) {
-    console.error('Failed to like post:', err);
   }
 
-  return; // ✅ prevent default redirect behavior
+  revalidatePath('/');
 }
