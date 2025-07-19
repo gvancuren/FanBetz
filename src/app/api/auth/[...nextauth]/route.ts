@@ -30,9 +30,8 @@ const handler = NextAuth({
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        // ✅ Return object with required shape
         return {
-          id: user.id.toString(),
+          id: user.id.toString(), // Ensure it's a string for NextAuth
           name: user.name,
           email: user.email,
           image: user.profileImage || null,
@@ -56,8 +55,8 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        if (token?.id) session.user.id = token.id as string;
-        if (token?.name) session.user.name = token.name as string;
+        (session.user as { id?: string }).id = token?.id as string;
+        session.user.name = token?.name as string;
       }
       return session;
     },
