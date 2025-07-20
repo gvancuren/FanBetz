@@ -7,11 +7,15 @@ import { revalidatePath } from 'next/cache';
 
 export async function followUser(creatorId: number) {
   const session = await getServerSession(authOptions);
-  const user = session?.user as { id: number; name?: string; email?: string };
 
-  const userId = user?.id;
+  // session.user.id is a string, but your DB expects an integer
+  const user = session?.user as { id: string; name?: string; email?: string };
 
-  if (!userId) throw new Error('Not authenticated');
+  if (!user?.id) throw new Error('Not authenticated');
+
+  const userId = parseInt(user.id, 10);
+  if (isNaN(userId)) throw new Error('Invalid user ID');
+
   if (userId === creatorId) throw new Error('Cannot follow yourself');
 
   const existingFollow = await prisma.follow.findFirst({
