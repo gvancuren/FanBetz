@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const existing = await prisma.follower.findFirst({
+  const existing = await prisma.follow.findFirst({
     where: {
       followerId: follower.id,
       followingId: Number(creatorId),
@@ -32,10 +32,12 @@ export async function POST(req: Request) {
   });
 
   if (existing) {
-    await prisma.follower.delete({ where: { id: existing.id } });
+    await prisma.follow.delete({
+      where: { id: existing.id },
+    });
     return NextResponse.json({ status: 'unfollowed' });
   } else {
-    await prisma.follower.create({
+    await prisma.follow.create({
       data: {
         followerId: follower.id,
         followingId: Number(creatorId),
