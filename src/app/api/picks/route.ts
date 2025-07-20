@@ -9,10 +9,10 @@ export async function POST(req: Request) {
     const sport = formData.get('sport') as string;
     const teams = formData.get('teams') as string;
     const market = formData.get('market') as string;
-    const pick = formData.get('pick') as string;
+    const prediction = formData.get('pick') as string; // still reading from "pick" in the form
 
     // Validate form fields
-    if (!userId || !sport || !teams || !market || !pick) {
+    if (!userId || !sport || !teams || !market || !prediction) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         sport,
         teams,
         market,
-        pick,
+        prediction, // ✅ correct Prisma field
       },
     });
 
