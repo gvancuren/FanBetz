@@ -94,11 +94,12 @@ model Subscription {
   creator              User     @relation("Creator", fields: [creatorId], references: [id])
   creatorId            Int
   plan                 String
+  price                Int      // ✅ Added to support upsert code
   expiresAt            DateTime
   createdAt            DateTime @default(now())
   stripeSubscriptionId String?
 
-  @@unique([subscriberId, creatorId]) // ✅ Needed for upsert
+  @@unique([subscriberId, creatorId])
 }
 
 model Comment {
