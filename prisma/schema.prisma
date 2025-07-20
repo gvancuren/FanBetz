@@ -97,6 +97,8 @@ model Subscription {
   expiresAt            DateTime
   createdAt            DateTime @default(now())
   stripeSubscriptionId String?
+
+  @@unique([subscriberId, creatorId]) // ✅ Needed for upsert
 }
 
 model Comment {
