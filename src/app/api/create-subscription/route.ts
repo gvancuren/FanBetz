@@ -25,6 +25,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Only creators can set subscription plans' }, { status: 403 });
     }
 
+    // ✅ Calculate expiration based on plan type
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + (plan === 'monthly' ? 30 : 7));
+
     await prisma.subscription.upsert({
       where: {
         subscriberId_creatorId: {
@@ -35,10 +39,12 @@ export async function POST(req: Request) {
       update: {
         plan,
         price,
+        expiresAt, // ✅ Required in update block
       },
       create: {
         plan,
         price,
+        expiresAt, // ✅ Required in create block
         subscriberId: creator.id,
         creatorId: creator.id,
       },
