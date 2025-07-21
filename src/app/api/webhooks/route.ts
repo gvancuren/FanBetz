@@ -28,7 +28,8 @@ export async function POST(req: Request) {
     // ✅ Auto-renew handler
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
-      const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : '';
+      const firstLine = invoice.lines?.data?.[0];
+      const stripeSubId = typeof firstLine?.subscription === 'string' ? firstLine.subscription : '';
 
       if (!stripeSubId) {
         console.warn('⚠️ Missing subscription ID on invoice');
