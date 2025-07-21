@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-06-30.basil',
 });
 
 export async function POST(req: Request) {
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         },
       },
       metadata: {
-        userId: String(session.user.id),        // string format for Stripe
+        userId: String(session.user.id),
         creatorId: String(creator.id),
         type: plan,
       },
