@@ -1,3 +1,5 @@
+"use client";
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -32,7 +34,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function CreatorProfile({ params }: { params: { username: string } }) {
+export default async function Page({ params }: { params: { username: string } }) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
@@ -85,7 +87,6 @@ export default async function CreatorProfile({ params }: { params: { username: s
     <div className="max-w-5xl mx-auto px-6 py-12 text-white space-y-10">
       <RefreshOnUnlock />
 
-      {/* Profile Header */}
       <div className="bg-zinc-900 p-10 rounded-2xl shadow-xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start sm:gap-8">
           {isOwner ? (
@@ -131,7 +132,6 @@ export default async function CreatorProfile({ params }: { params: { username: s
           </div>
         </div>
 
-        {/* Creator-only settings */}
         {isOwner && (
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
@@ -150,7 +150,6 @@ export default async function CreatorProfile({ params }: { params: { username: s
           </div>
         )}
 
-        {/* Subscribe CTA */}
         {!isOwner && !isSubscribed && (
           <div className="flex justify-center mt-6">
             <SubscribeButtons
@@ -162,7 +161,6 @@ export default async function CreatorProfile({ params }: { params: { username: s
         )}
       </div>
 
-      {/* Post Creation */}
       {isOwner && (
         <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">
@@ -172,10 +170,8 @@ export default async function CreatorProfile({ params }: { params: { username: s
         </div>
       )}
 
-      {/* Creator Posts */}
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
-
         <div className="space-y-6">
           {user.posts?.length === 0 ? (
             <p className="text-gray-400 italic">No posts yet.</p>
