@@ -1,4 +1,3 @@
-import type { PageProps } from 'next';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -33,7 +32,11 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function CreatorProfile({ params }: PageProps) {
+interface CreatorProfileProps {
+  params: { username: string };
+}
+
+export default async function CreatorProfile({ params }: CreatorProfileProps) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
