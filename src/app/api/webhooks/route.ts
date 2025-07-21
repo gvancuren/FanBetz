@@ -1,9 +1,10 @@
+// /src/app/api/webhooks/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-06-30.basil',
 });
 
 export async function POST(req: Request) {
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ✅ New: Auto-renew handler
+    // ✅ Auto-renew handler
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
       const stripeSubId = invoice.subscription as string;
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Existing: First-time subscription or post unlock
+    // ✅ Handle checkout session completion
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
