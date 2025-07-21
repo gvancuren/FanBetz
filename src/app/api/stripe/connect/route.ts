@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-06-30.basil',
 });
 
 export async function POST() {
@@ -48,5 +48,5 @@ export async function POST() {
     type: 'account_onboarding',
   });
 
-  return NextResponse.json({ url: accountLink.url }); // ✅ return JSON
+  return NextResponse.json({ url: accountLink.url });
 }
