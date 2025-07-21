@@ -32,11 +32,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-interface CreatorProfileProps {
-  params: { username: string };
-}
-
-export default async function CreatorProfile({ params }: CreatorProfileProps) {
+export default async function CreatorProfile({ params }: { params: { username: string } }) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
