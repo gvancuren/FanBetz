@@ -74,6 +74,15 @@ export async function POST(req: Request) {
       }
 
       if (plan === 'weekly' || plan === 'monthly') {
+        const creator = await prisma.user.findUnique({
+          where: { id: creatorId },
+        });
+
+        if (!creator) throw new Error('Creator not found');
+
+        const priceCents = plan === 'weekly' ? creator.weeklyPrice : creator.monthlyPrice;
+        if (!priceCents) throw new Error('Missing price on creator profile');
+
         const expiresAt = new Date();
         if (plan === 'weekly') {
           expiresAt.setDate(expiresAt.getDate() + 7);
@@ -84,6 +93,7 @@ export async function POST(req: Request) {
         await prisma.subscription.create({
           data: {
             plan,
+            price: priceCents,
             expiresAt,
             subscriber: { connect: { id: subscriberId } },
             creator: { connect: { id: creatorId } },
