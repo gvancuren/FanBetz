@@ -28,7 +28,12 @@ export async function POST(req: Request) {
     // ✅ Auto-renew handler
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
-      const stripeSubId = invoice.subscription as string;
+      const stripeSubId = typeof invoice.subscription === 'string' ? invoice.subscription : '';
+
+      if (!stripeSubId) {
+        console.warn('⚠️ Missing subscription ID on invoice');
+        return new Response('No subscription ID', { status: 400 });
+      }
 
       const userSub = await prisma.subscription.findFirst({
         where: { stripeSubscriptionId: stripeSubId },
@@ -81,7 +86,7 @@ export async function POST(req: Request) {
             expiresAt,
             subscriber: { connect: { id: subscriberId } },
             creator: { connect: { id: creatorId } },
-            stripeSubscriptionId: session.subscription as string || undefined,
+            stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
           },
         });
 
