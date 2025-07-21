@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { duration, price } = body;
 
-    if (!['weekly', 'monthly'].includes(duration) || price === undefined) {
+    if (!['weekly', 'monthly'].includes(duration) || typeof price !== 'number') {
       return NextResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
@@ -26,7 +26,14 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ message: 'Subscription price saved!', user: updatedUser });
+    return NextResponse.json({
+      message: 'Subscription price saved!',
+      user: {
+        id: updatedUser.id,
+        weeklyPrice: updatedUser.weeklyPrice,
+        monthlyPrice: updatedUser.monthlyPrice,
+      },
+    });
   } catch (error) {
     console.error('Error setting subscription price:', error);
     return NextResponse.json({ message: 'Error setting price' }, { status: 500 });
