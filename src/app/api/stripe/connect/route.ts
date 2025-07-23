@@ -1,4 +1,5 @@
 // /app/api/stripe/connect/route.ts
+
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -11,13 +12,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST() {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
 
-  if (!userId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
+  const userId = session.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -34,7 +38,7 @@ export async function POST() {
     accountId = account.id;
 
     await prisma.user.update({
-      where: { id: Number(userId) },
+      where: { id: userId },
       data: { stripeAccountId: accountId },
     });
   }
