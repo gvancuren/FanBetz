@@ -1,3 +1,5 @@
+// 🔁 Triggering rebuild to fix stale Vercel PageProps cache
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
