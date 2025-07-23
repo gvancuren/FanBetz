@@ -38,7 +38,8 @@ interface PageProps {
   };
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params }: { params: { username: string } }) {
+
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
