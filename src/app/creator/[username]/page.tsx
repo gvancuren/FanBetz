@@ -17,11 +17,10 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-04-10',
+    apiVersion: '2025-06-30.basil',
   });
 
   try {
@@ -31,6 +30,12 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
     console.error('Stripe check failed:', err);
     return false;
   }
+}
+
+interface PageProps {
+  params: {
+    username: string;
+  };
 }
 
 export default async function Page({ params }: PageProps) {
