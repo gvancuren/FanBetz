@@ -17,7 +17,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  const userId = Number(session.user.id); // ✅ Convert to number
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
