@@ -34,12 +34,6 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-interface PageProps {
-  params: {
-    username: string;
-  };
-}
-
 export default async function Page({ params }: { params: { username: string } }) {
 
   const decodedUsername = decodeURIComponent(params.username).trim();
