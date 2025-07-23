@@ -14,9 +14,9 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
-import type { PageProps } from 'next';
 
 export const dynamic = 'force-dynamic';
+
 
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
