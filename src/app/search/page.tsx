@@ -1,11 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { PageProps } from 'next'; // ✅ Import required for Next.js 15+
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams }: PageProps) {
+interface Props {
+  searchParams: { q?: string };
+}
+
+export default async function SearchPage({ searchParams }: Props) {
   const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
 
   if (!query || query.length === 0) {
