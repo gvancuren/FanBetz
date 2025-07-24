@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface UnlockPostButtonProps {
-  postId: string;
-  creatorId: number;
+  postId: string | number;
+  creatorId: string | number;
   amount: number; // in cents
 }
 
@@ -42,7 +42,7 @@ export default function UnlockPostButton({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ postId }),
+          body: JSON.stringify({ postId: postId.toString() }),
         });
 
         if (res.ok) {
@@ -59,9 +59,9 @@ export default function UnlockPostButton({
           },
           body: JSON.stringify({
             type: 'post',
-            postId,
+            postId: postId.toString(),
             amount,
-            creatorId,
+            creatorId: creatorId.toString(),
             userId, // ✅ REQUIRED for webhook
           }),
         });
