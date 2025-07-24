@@ -1,7 +1,7 @@
 interface Comment {
   id: number;
   content: string;
-  createdAt: Date; // ✅ updated from string to Date
+  createdAt: Date; // ✅ uses actual Date type now
   user: {
     name: string;
     profileImage?: string | null;
@@ -13,7 +13,7 @@ interface CommentListProps {
 }
 
 export default function CommentList({ comments }: CommentListProps) {
-  if (!comments || comments.length === 0) return null;
+  if (!comments?.length) return null;
 
   return (
     <div className="space-y-4 mt-4">
@@ -31,7 +31,7 @@ export default function CommentList({ comments }: CommentListProps) {
           </div>
           <p className="text-gray-300 text-sm">{comment.content}</p>
           <p className="text-gray-500 text-xs mt-1">
-            {comment.createdAt.toLocaleString()} {/* ✅ format Date safely */}
+            {new Date(comment.createdAt).toLocaleString()}
           </p>
         </div>
       ))}

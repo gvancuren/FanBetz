@@ -233,8 +233,8 @@ export default async function Page({ params }: { params: { username: string } })
                       </div>
                       <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                         <UnlockPostButton
-                          postId={post.id}
-                          creatorId={user.id}
+                          postId={post.id.toString()}
+                          creatorId={user.id.toString()}
                           amount={post.price ?? 0}
                         />
                       </div>
