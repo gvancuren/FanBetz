@@ -1,4 +1,3 @@
-// src/app/search/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -52,15 +51,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="min-h-screen py-16 px-6 text-white">
-      <h1 className="text-4xl font-bold text-yellow-400 mb-4">Search Results</h1>
+      <h1 className="text-4xl font-bold text-yellow-400 mb-8">Search Results</h1>
 
-      <div className="space-y-6">
+      <div className="space-y-10">
+        {/* Creators Section */}
         <section>
-          <h2 className="text-2xl font-semibold text-white mb-2">Creators</h2>
+          <h2 className="text-2xl font-semibold text-white mb-3">Creators</h2>
           {creators.length === 0 ? (
             <p className="text-gray-400">No creators found.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {creators.map((creator) => (
                 <li key={creator.id}>
                   <Link
@@ -70,9 +70,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <img
                       src={creator.profileImage || '/default-profile.png'}
                       alt={creator.name}
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-9 h-9 rounded-full object-cover border border-gray-700"
                     />
-                    <span>{creator.name}</span>
+                    <span className="font-medium">{creator.name}</span>
                   </Link>
                 </li>
               ))}
@@ -80,16 +80,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           )}
         </section>
 
+        {/* Posts Section */}
         <section>
-          <h2 className="text-2xl font-semibold text-white mb-2">Posts</h2>
+          <h2 className="text-2xl font-semibold text-white mb-3">Posts</h2>
           {posts.length === 0 ? (
             <p className="text-gray-400">No posts found.</p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-5">
               {posts.map((post) => (
                 <li key={post.id}>
                   <Link href={`/creator/${post.user.name}`}>
-                    <div className="bg-zinc-800 p-4 rounded-xl hover:bg-zinc-700 transition">
+                    <div className="bg-zinc-800 p-5 rounded-2xl hover:bg-zinc-700 transition">
                       <h3 className="text-xl text-yellow-400 font-semibold">{post.title}</h3>
                       <p className="text-sm text-gray-400 mt-1">
                         by {post.user.name} — {new Date(post.createdAt).toLocaleString()}
