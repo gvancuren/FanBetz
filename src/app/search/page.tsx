@@ -1,15 +1,15 @@
+// src/app/search/page.tsx
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({
-  searchParams,
-}: {
+interface SearchPageProps {
   searchParams: { q?: string };
-}) {
+}
 
+export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
 
   if (!query || query.length === 0) {
@@ -40,68 +40,68 @@ export default async function SearchPage({
           { content: { contains: query, mode: 'insensitive' } },
         ],
       },
-      take: 10,
+      take: 20,
       include: {
         user: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     }),
   ]);
 
   return (
-    <div className="min-h-screen px-6 py-16 text-white">
+    <div className="min-h-screen py-16 px-6 text-white">
       <h1 className="text-4xl font-bold text-yellow-400 mb-4">Search Results</h1>
-      <p className="text-gray-300 text-lg mb-10">Showing results for: <strong>{query}</strong></p>
 
-      <div className="space-y-12">
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Creators</h2>
+      <div className="space-y-6">
+        <section>
+          <h2 className="text-2xl font-semibold text-white mb-2">Creators</h2>
           {creators.length === 0 ? (
-            <p className="text-gray-400 italic">No creators found.</p>
+            <p className="text-gray-400">No creators found.</p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <ul className="space-y-2">
               {creators.map((creator) => (
-                <Link
-                  key={creator.id}
-                  href={`/creator/${creator.name}`}
-                  className="block bg-zinc-900 p-4 rounded-xl hover:shadow-xl border border-zinc-700"
-                >
-                  <div className="flex items-center space-x-4">
+                <li key={creator.id}>
+                  <Link
+                    href={`/creator/${creator.name}`}
+                    className="flex items-center gap-3 text-yellow-300 hover:underline"
+                  >
                     <img
-                      src={creator.profileImage || '/default-avatar.png'}
+                      src={creator.profileImage || '/default-profile.png'}
                       alt={creator.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-yellow-400"
+                      className="w-8 h-8 rounded-full object-cover"
                     />
-                    <div>
-                      <p className="text-xl font-bold">{creator.name}</p>
-                      <p className="text-sm text-gray-400">{creator.followers.length} followers</p>
-                    </div>
-                  </div>
-                </Link>
+                    <span>{creator.name}</span>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </section>
 
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Posts</h2>
+        <section>
+          <h2 className="text-2xl font-semibold text-white mb-2">Posts</h2>
           {posts.length === 0 ? (
-            <p className="text-gray-400 italic">No posts found.</p>
+            <p className="text-gray-400">No posts found.</p>
           ) : (
-            <div className="space-y-6">
+            <ul className="space-y-4">
               {posts.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/creator/${post.user.name}`}
-                  className="block bg-zinc-900 p-5 rounded-xl hover:shadow-xl border border-zinc-700"
-                >
-                  <h3 className="text-xl font-semibold">{post.title}</h3>
-                  <p className="text-sm text-gray-400 mt-1">By {post.user.name}</p>
-                  <p className="text-gray-300 mt-2 line-clamp-3">{post.content}</p>
-                </Link>
+                <li key={post.id}>
+                  <Link href={`/creator/${post.user.name}`}>
+                    <div className="bg-zinc-800 p-4 rounded-xl hover:bg-zinc-700 transition">
+                      <h3 className="text-xl text-yellow-400 font-semibold">{post.title}</h3>
+                      <p className="text-sm text-gray-400 mt-1">
+                        by {post.user.name} — {new Date(post.createdAt).toLocaleString()}
+                      </p>
+                      <p className="text-gray-300 mt-2 line-clamp-3">{post.content}</p>
+                    </div>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
