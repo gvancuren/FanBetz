@@ -4,7 +4,12 @@ import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams }: PageProps) {
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+
   const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
 
   if (!query || query.length === 0) {
