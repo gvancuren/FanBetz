@@ -1,7 +1,7 @@
 interface Comment {
   id: number;
   content: string;
-  createdAt: string | Date; // ✅ now accepts both
+  createdAt: Date; // ✅ updated from string to Date
   user: {
     name: string;
     profileImage?: string | null;
@@ -31,7 +31,7 @@ export default function CommentList({ comments }: CommentListProps) {
           </div>
           <p className="text-gray-300 text-sm">{comment.content}</p>
           <p className="text-gray-500 text-xs mt-1">
-            {new Date(comment.createdAt).toLocaleString()}
+            {comment.createdAt.toLocaleString()} {/* ✅ format Date safely */}
           </p>
         </div>
       ))}
