@@ -1,10 +1,23 @@
-import type { AuthOptions } from 'next-auth';
-import NextAuth from 'next-auth';
+import NextAuth, { type AuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import type { DefaultSession } from 'next-auth';
+
+// Extend session type to include `id`
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+    } & DefaultSession['user'];
+  }
+
+  interface User {
+    id: string;
+  }
+}
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -38,7 +51,7 @@ export const authOptions: AuthOptions = {
         }
 
         return {
-          id: String(user.id), // Cast to string for NextAuth
+          id: String(user.id),
           email: user.email,
           name: user.name,
         };
@@ -60,9 +73,9 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (token?.id) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
+        session.user.id = token.id as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
       }
       return session;
     },
