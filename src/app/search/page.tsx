@@ -28,7 +28,11 @@ export default async function SearchPage(props: any) {
         id: true,
         name: true,
         profileImage: true,
-        followers: true,
+        _count: {
+          select: {
+            followers: true,
+          },
+        },
       },
     }),
     prisma.post.findMany({
@@ -71,7 +75,12 @@ export default async function SearchPage(props: any) {
                       alt={creator.name}
                       className="w-9 h-9 rounded-full object-cover border border-gray-700"
                     />
-                    <span className="font-medium">{creator.name}</span>
+                    <span className="font-medium">
+                      {creator.name}
+                    </span>
+                    <span className="text-sm text-gray-400 ml-2">
+                      ({creator._count.followers} followers)
+                    </span>
                   </Link>
                 </li>
               ))}
