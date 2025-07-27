@@ -20,12 +20,16 @@ export const authOptions: AuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Missing email or password');
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials?.email },
+          where: { email: credentials.email },
         });
 
         if (!user || !user.password) {
-          throw new Error('No user found or password is not set');
+          throw new Error('No user found or password not set');
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
@@ -34,7 +38,7 @@ export const authOptions: AuthOptions = {
         }
 
         return {
-          id: String(user.id), // ✅ Cast to string for NextAuth compatibility
+          id: String(user.id), // Cast to string for NextAuth
           email: user.email,
           name: user.name,
         };
