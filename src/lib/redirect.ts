@@ -1,13 +1,15 @@
 'use server';
 
-import { auth } from './auth';
+import auth from './auth'; // ✅ Fix default import
 import { redirect } from 'next/navigation';
 import { prisma } from './prisma';
 
 export async function redirectToProfile() {
   const session = await auth();
+
   if (!session?.user?.email) {
-    return redirect('/signin');
+    redirect('/signin');
+    return;
   }
 
   const user = await prisma.user.findUnique({
@@ -15,8 +17,9 @@ export async function redirectToProfile() {
   });
 
   if (user?.name) {
-    return redirect(`/creator/${encodeURIComponent(user.name)}`);
+    redirect(`/creator/${encodeURIComponent(user.name)}`);
+    return;
   }
 
-  return redirect('/dashboard');
+  redirect('/dashboard');
 }
