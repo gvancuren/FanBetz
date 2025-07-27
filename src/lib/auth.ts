@@ -1,4 +1,4 @@
-import type { AuthOptions } from 'next-auth'; // ✅ Add type
+import type { AuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -34,7 +34,7 @@ export const authOptions: AuthOptions = {
         }
 
         return {
-          id: user.id,
+          id: String(user.id), // ✅ Cast to string for NextAuth compatibility
           email: user.email,
           name: user.name,
         };
