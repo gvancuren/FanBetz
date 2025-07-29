@@ -39,7 +39,8 @@ type Props = {
 };
 
 export default async function Page({ params }: Props): Promise<JSX.Element> {
-  const decodedUsername = decodeURIComponent(params.username).trim();
+  const { username } = params;
+  const decodedUsername = decodeURIComponent(username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
