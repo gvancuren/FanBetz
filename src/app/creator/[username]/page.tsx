@@ -14,6 +14,7 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
+import type { PageProps } from 'next'; // ✅ Use Next.js 15+ compatible PageProps
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +33,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-// ✅ Correct typing for Next.js App Router
-type Props = {
-  params: {
-    username: string;
-  };
-};
-
-export default async function Page({ params }: Props) {
+export default async function Page({ params }: PageProps) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
