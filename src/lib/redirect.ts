@@ -1,6 +1,6 @@
 'use server';
 
-import auth from './auth'; // ✅ Fix default import
+import auth from './auth'; // ✅ Correct default import
 import { redirect } from 'next/navigation';
 import { prisma } from './prisma';
 
