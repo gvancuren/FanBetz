@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import type { PageProps } from 'next';
 import CreatePostForm from '@/components/CreatePostForm';
 import UnlockPostButton from '@/components/UnlockPostButton';
 import RefreshOnUnlock from '@/components/RefreshOnUnlock';
@@ -32,11 +33,11 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-type Props = {
+interface Props extends PageProps {
   params: {
     username: string;
   };
-};
+}
 
 export default async function Page({ params }: Props) {
   const decodedUsername = decodeURIComponent(params.username).trim();
