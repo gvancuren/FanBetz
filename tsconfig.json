@@ -13,22 +13,23 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": "src", // ✅ Added for non-relative import resolution
+    "paths": {
+      "@/*": ["*"] // ✅ Updated so @/lib/something resolves to src/lib/something
+    },
+    "types": ["next-auth"],
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "types": ["next-auth"]
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types"             // ✅ include your custom types here
+    "types"
   ],
   "exclude": ["node_modules"]
 }
