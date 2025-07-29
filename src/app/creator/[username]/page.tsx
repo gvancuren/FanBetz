@@ -16,6 +16,7 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
+import type { PageProps } from 'next'; // ✅ Proper type for Next.js 15+
 
 export const dynamic = 'force-dynamic';
 
@@ -34,14 +35,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-// ✅ Use correct type signature for Next.js 15 route handlers
-type CreatorPageProps = {
-  params: {
-    username: string;
-  };
-};
-
-export default async function Page({ params }: CreatorPageProps): Promise<JSX.Element> {
+export default async function Page({ params }: PageProps): Promise<JSX.Element> {
   const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
@@ -256,4 +250,3 @@ export default async function Page({ params }: CreatorPageProps): Promise<JSX.El
     </div>
   );
 }
-
