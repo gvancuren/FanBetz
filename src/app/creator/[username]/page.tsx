@@ -33,14 +33,9 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-interface Props extends PageProps {
-  params: {
-    username: string;
-  };
-}
-
-export default async function Page({ params }: Props) {
-  const decodedUsername = decodeURIComponent(params.username).trim();
+export default async function Page({ params }: PageProps): Promise<JSX.Element> {
+  const { username } = await params;
+  const decodedUsername = decodeURIComponent(username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
