@@ -98,7 +98,7 @@ export default async function Home() {
 
       {/* Trending Posts */}
       <section className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-12">🔥 Trending Picks</h2>
+        <h2 className="text-4xl font-bold text-center mb-12"> Trending Picks</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {trendingPosts.map((post) => {
             const isUnlocked = post.price === 0;
