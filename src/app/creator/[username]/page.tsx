@@ -32,7 +32,14 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({ params }: { params: { username: string } }) {
+// ✅ Correct typing for Next.js App Router
+type Props = {
+  params: {
+    username: string;
+  };
+};
+
+export default async function Page({ params }: Props) {
   const decodedUsername = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
