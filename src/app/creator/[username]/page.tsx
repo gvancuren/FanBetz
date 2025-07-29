@@ -14,7 +14,6 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
-import type { PageProps } from 'next'; // ✅ FIXED HERE
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +32,11 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({ params }: PageProps): Promise<JSX.Element> {
+export default async function Page({
+  params,
+}: {
+  params: { username: string };
+}): Promise<JSX.Element> {
   const { username } = params;
   const decodedUsername = decodeURIComponent(username).trim();
   const session = await getServerSession(authOptions);
