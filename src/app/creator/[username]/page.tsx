@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import type { PageProps } from 'next';
 import CreatePostForm from '@/components/CreatePostForm';
 import UnlockPostButton from '@/components/UnlockPostButton';
 import RefreshOnUnlock from '@/components/RefreshOnUnlock';
@@ -17,6 +16,31 @@ import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
+
+async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
+  if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-06-30.basil',
+  });
+
+  try {
+    const account = await stripe.accounts.retrieve(stripeAccountId);
+    return account.charges_enabled && account.details_submitted;
+  } catch (err) {
+    console.error('Stripe check failed:', err);
+    return false;
+  }
+}
+
+type Props = {
+  params: {
+    username: string;
+  };
+};
+
+export default async function Page({ params }: Props) {
+  const decodedUsername = decodeURIComponent(params.username).trim();
+
 
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
