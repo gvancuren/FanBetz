@@ -38,28 +38,8 @@ type Props = {
   };
 };
 
-export default async function Page({ params }: Props) {
+export default async function Page({ params }: Props): Promise<JSX.Element> {
   const decodedUsername = decodeURIComponent(params.username).trim();
-
-
-async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
-  if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-06-30.basil',
-  });
-
-  try {
-    const account = await stripe.accounts.retrieve(stripeAccountId);
-    return account.charges_enabled && account.details_submitted;
-  } catch (err) {
-    console.error('Stripe check failed:', err);
-    return false;
-  }
-}
-
-export default async function Page({ params }: PageProps): Promise<JSX.Element> {
-  const { username } = await params;
-  const decodedUsername = decodeURIComponent(username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
