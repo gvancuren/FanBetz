@@ -1,3 +1,5 @@
+// src/app/creator/[username]/page.tsx
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -32,20 +34,22 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { username: string };
-}): Promise<JSX.Element> {
-  const { username } = params;
-  const decodedUsername = decodeURIComponent(username).trim();
+// ✅ Use correct type signature for Next.js 15 route handlers
+type CreatorPageProps = {
+  params: {
+    username: string;
+  };
+};
+
+export default async function Page({ params }: CreatorPageProps): Promise<JSX.Element> {
+  const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
   const user = await prisma.user.findFirst({
     where: {
       name: {
-        equals: decodedUsername,
+        equals: username,
         mode: 'insensitive',
       },
       isCreator: true,
@@ -136,7 +140,6 @@ export default async function Page({
           </div>
         </div>
 
-        {/* Creator-only settings */}
         {isOwner && (
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
@@ -155,7 +158,6 @@ export default async function Page({
           </div>
         )}
 
-        {/* Subscribe CTA */}
         {!isOwner && !isSubscribed && (
           <div className="flex justify-center mt-6">
             <SubscribeButtons
@@ -167,7 +169,6 @@ export default async function Page({
         )}
       </div>
 
-      {/* Post Creation */}
       {isOwner && (
         <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
           <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">
@@ -177,7 +178,6 @@ export default async function Page({
         </div>
       )}
 
-      {/* Creator Posts */}
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
 
@@ -256,3 +256,4 @@ export default async function Page({
     </div>
   );
 }
+
