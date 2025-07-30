@@ -1,5 +1,3 @@
-// src/app/creator/[username]/page.tsx
-
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -16,7 +14,6 @@ import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import Stripe from 'stripe';
-import type { PageProps } from 'next'; // ✅ Proper type for Next.js 15+
 
 export const dynamic = 'force-dynamic';
 
@@ -35,17 +32,19 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({ params }: PageProps): Promise<JSX.Element> {
+// ✅ Local param typing (Next.js 15 doesn't export PageProps)
+type CreatorPageProps = {
+  params: { username: string };
+};
+
+export default async function Page({ params }: CreatorPageProps): Promise<JSX.Element> {
   const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
   const user = await prisma.user.findFirst({
     where: {
-      name: {
-        equals: username,
-        mode: 'insensitive',
-      },
+      name: { equals: username, mode: 'insensitive' },
       isCreator: true,
     },
     include: {
@@ -58,14 +57,10 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
         },
       },
       subscribers: {
-        where: {
-          subscriberId: viewerId ?? 0,
-        },
+        where: { subscriberId: viewerId ?? 0 },
       },
       followersList: {
-        include: {
-          follower: true,
-        },
+        include: { follower: true },
       },
     },
   });
@@ -79,7 +74,6 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
   const now = new Date();
   const activeSubscription = user.subscribers.find((sub) => new Date(sub.expiresAt) > now);
   const isSubscribed = !!activeSubscription;
-
   const stripeReady = user.stripeAccountId
     ? await isStripeFullyConnected(user.stripeAccountId)
     : false;
@@ -109,7 +103,6 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
           <div className="mt-4 sm:mt-0 text-center sm:text-left">
             <h1 className="text-3xl font-bold">{user.name}</h1>
             <p className="text-gray-400 mt-1 whitespace-pre-wrap">{user.bio}</p>
-
             <p className="text-sm text-gray-400 mt-2">
               {user.followersList.length} followers •{' '}
               <Link
@@ -119,13 +112,11 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
                 View Followers
               </Link>
             </p>
-
             {!isOwner && viewerId && (
               <div className="mt-3">
                 <FollowButton creatorId={user.id} isFollowingInitial={isFollowing} />
               </div>
             )}
-
             {isSubscribed && (
               <p className="text-green-400 text-sm mt-2 font-medium">
                 ✅ Subscribed – all posts unlocked
@@ -174,7 +165,6 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
 
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
-
         <div className="space-y-6">
           {user.posts?.length === 0 ? (
             <p className="text-gray-400 italic">No posts yet.</p>
@@ -182,7 +172,6 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
             user.posts.map((post) => {
               const isUnlocked =
                 isSubscribed || post.unlocks.some((unlock) => unlock.userId === viewerId);
-
               return (
                 <div
                   key={post.id}
@@ -237,7 +226,6 @@ export default async function Page({ params }: PageProps): Promise<JSX.Element> 
                       </div>
                     </div>
                   )}
-
                   <p className="text-sm text-gray-500">
                     Posted: {new Date(post.createdAt).toLocaleString()}
                   </p>
