@@ -1,51 +1,48 @@
-'use client';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import cloudinary from '@/lib/cloudinary';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-export default function ProfileImageForm() {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const router = useRouter();
+  try {
+    const formData = await req.formData();
+    const file = formData.get('image') as File;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return;
+    console.log('Session:', session.user.email);
+    console.log('FormData keys:', [...formData.keys()]);
+    console.log('File:', file?.name, file?.size);
 
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const res = await fetch('/api/updateprofilepicture', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (res.ok) {
-      router.refresh(); // ✅ Re-fetch server-side content like profile image
+    if (!file || file.size === 0) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    setUploading(false);
-  };
+    // ✅ Convert file to base64 and upload to Cloudinary
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const dataUri = `data:${file.type};base64,${base64}`;
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          if (e.target.files) setFile(e.target.files[0]);
-        }}
-        className="mb-4"
-      />
-      <button
-        type="submit"
-        disabled={uploading}
-        className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-300"
-      >
-        {uploading ? 'Uploading...' : 'Update Photo'}
-      </button>
-    </form>
-  );
+    const uploadResult = await cloudinary.uploader.upload(dataUri, {
+      folder: 'fanbetz/profile_pics',
+    });
+
+    const imageUrl = uploadResult.secure_url;
+
+    // ✅ Save image URL in database
+    const user = await prisma.user.update({
+      where: { email: session.user.email },
+      data: { profileImage: imageUrl },
+    });
+
+    return NextResponse.json({ imageUrl }, { status: 200 });
+  } catch (error) {
+    console.error('Profile image upload failed:', error);
+    return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
+  }
 }
