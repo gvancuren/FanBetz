@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs'; // ✅ Replaced bcrypt with bcryptjs
-import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -29,10 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Username already taken.' }, { status: 400 });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user in database
     const user = await prisma.user.create({
       data: {
         email,
@@ -42,18 +39,12 @@ export async function POST(request: Request) {
       },
     });
 
-    // Auto-login using redirect to credentials provider
-    const formBody = new URLSearchParams({
-      email,
-      password,
-      callbackUrl: `/creator/${encodeURIComponent(name)}`,
-    });
-
-    return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/api/auth/callback/credentials?${formBody.toString()}`
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Signup error:', error);
-    return NextResponse.json({ message: 'Signup failed.' }, { status: 500 });
+    console.error('🔥 Signup failed:', error);
+    return NextResponse.json(
+      { message: 'Signup failed.', error: String(error) },
+      { status: 500 }
+    );
   }
 }
