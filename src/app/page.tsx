@@ -9,9 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const featuredCreators = await prisma.user.findMany({
     where: { isCreator: true },
-    include: {
-      followersList: true,
-    },
+    include: { followersList: true },
   });
 
   const topCreators = featuredCreators
@@ -41,9 +39,7 @@ export default async function Home() {
         <h1 className="text-6xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
           FanBetz.com
         </h1>
-        <p className="text-2xl text-gray-300">
-          Bet Smarter. Win Bigger.
-        </p>
+        <p className="text-2xl text-gray-300">Bet Smarter. Win Bigger.</p>
         <p className="text-lg text-gray-400">
           Buy expert picks from top-ranked sports bettors.
         </p>
@@ -55,13 +51,13 @@ export default async function Home() {
       </section>
 
       {/* Sports Categories Scroll */}
-      <section className="overflow-x-auto whitespace-nowrap py-4 scrollbar-hide">
-        <div className="flex gap-4 justify-center px-2 sm:px-6">
+      <section className="py-4">
+        <div className="flex overflow-x-auto gap-4 px-2 sm:px-6 scrollbar-hide scroll-smooth snap-x snap-mandatory">
           {sports.map((sport) => (
             <Link
               key={sport}
               href={`/${sport.toLowerCase()}`}
-              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold"
+              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold snap-start"
             >
               {sport}
             </Link>
@@ -98,7 +94,7 @@ export default async function Home() {
 
       {/* Trending Posts */}
       <section className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-12"> Trending Picks</h2>
+        <h2 className="text-4xl font-bold text-center mb-12">Trending Picks</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {trendingPosts.map((post) => {
             const isUnlocked = post.price === 0;
