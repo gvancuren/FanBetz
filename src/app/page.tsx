@@ -50,14 +50,14 @@ export default async function Home() {
         </Link>
       </section>
 
-      {/* Sports Categories Scroll */}
-      <section className="py-4">
-        <div className="flex overflow-x-auto gap-4 px-2 sm:px-6 scrollbar-hide scroll-smooth snap-x snap-mandatory">
+      {/* Sports Categories Scrollable */}
+      <section className="w-full overflow-x-auto py-4 scrollbar-hide">
+        <div className="flex gap-4 px-6 sm:px-0 max-w-screen-lg mx-auto justify-start sm:justify-center">
           {sports.map((sport) => (
             <Link
               key={sport}
               href={`/${sport.toLowerCase()}`}
-              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold snap-start"
+              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold"
             >
               {sport}
             </Link>
