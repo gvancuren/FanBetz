@@ -1,8 +1,6 @@
 // ✅ src/components/DashboardClient.tsx
 'use client';
 
-import Link from 'next/link';
-
 export default function DashboardClient({ user }: { user: any }) {
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 text-white space-y-12">
@@ -28,12 +26,6 @@ export default function DashboardClient({ user }: { user: any }) {
       {/* RECENT POSTS */}
       <section className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">📝 Recent Posts</h2>
-        <Link
-          href="/create-post"
-          className="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600"
-        >
-          + New Post
-        </Link>
       </section>
 
       <div className="space-y-6">
