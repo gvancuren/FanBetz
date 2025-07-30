@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile } from 'fs/promises';
-import fs from 'fs';
-import path from 'path';
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -16,30 +13,23 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('image') as File;
 
+    console.log('Session:', session.user.email);
+    console.log('FormData keys:', [...formData.keys()]);
+    console.log('File:', file?.name, file?.size);
+
     if (!file || file.size === 0) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `${Date.now()}-${file.name}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    // 🚨 Vercel does not allow writing to disk, so we'll skip that part here
+    const imageUrl = `/uploads/test.png`; // Replace with real hosted image URL later
 
-    // Ensure uploads directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    const imageUrl = `/uploads/${fileName}`;
-
-    await prisma.user.update({
+    const user = await prisma.user.update({
       where: { email: session.user.email },
       data: { profileImage: imageUrl },
     });
 
-    return NextResponse.json({ imageUrl }, { status: 200 });
+    return NextResponse.json({ imageUrl: user.profileImage }, { status: 200 });
   } catch (error) {
     console.error('Profile image upload failed:', error);
     return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
