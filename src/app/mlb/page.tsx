@@ -4,12 +4,12 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MLBPage() {{
-  const posts = await prisma.post.findMany({{
-    where: {{ category: 'MLB' }},
-    include: {{ user: true }},
-    orderBy: {{ createdAt: 'desc' }},
-  }});
+export default async function MLBPage() {
+  const posts = await prisma.post.findMany({
+    where: { category: 'MLB' },
+    include: { user: true },
+    orderBy: { createdAt: 'desc' },
+  });
 
   return (
     <div className="min-h-screen py-16 px-6 text-white">
@@ -18,34 +18,34 @@ export default async function MLBPage() {{
         View all the latest MLB picks, insights, and strategies shared by FanBetz creators.
       </p>
 
-      {{posts.length === 0 ? (
+      {posts.length === 0 ? (
         <p className="text-gray-500">No MLB picks yet. Check back soon!</p>
       ) : (
         <div className="grid gap-6">
-          {{posts.map((post) => (
-            <div key={{post.id}} className="bg-zinc-800 p-6 rounded-xl shadow">
-              <Link href={{`/creator/${{post.user.name}}`}}>
+          {posts.map((post) => (
+            <div key={post.id} className="bg-zinc-800 p-6 rounded-xl shadow">
+              <Link href={`/creator/${post.user.name}`}>
                 <h2 className="text-2xl font-semibold text-yellow-300 hover:underline">
-                  {{post.title}}
+                  {post.title}
                 </h2>
               </Link>
-              <p className="text-gray-400 mb-2 text-sm">by {{post.user.name}}</p>
-              <p className="text-gray-200">{{post.content}}</p>
-              {{post.imageUrl && (
+              <p className="text-gray-400 mb-2 text-sm">by {post.user.name}</p>
+              <p className="text-gray-200">{post.content}</p>
+              {post.imageUrl && (
                 <div className="mt-4">
                   <Image
-                    src={{post.imageUrl}}
+                    src={post.imageUrl}
                     alt="Post image"
-                    width={{600}}
-                    height={{400}}
+                    width={600}
+                    height={400}
                     className="rounded-xl"
                   />
                 </div>
-              )}}
+              )}
             </div>
-          ))}}
+          ))}
         </div>
-      )}}
+      )}
     </div>
   );
-}}
+}
