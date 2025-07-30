@@ -1,3 +1,5 @@
+// src/app/creator/[username]/page.tsx
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -17,6 +19,13 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
+// ✅ Fix: Proper typing for Next.js 15 dynamic route
+type Props = {
+  params: {
+    username: string;
+  };
+};
+
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -32,12 +41,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-// ✅ Local param typing (Next.js 15 doesn't export PageProps)
-type CreatorPageProps = {
-  params: { username: string };
-};
-
-export default async function Page({ params }: CreatorPageProps): Promise<JSX.Element> {
+export default async function Page({ params }: Props): Promise<JSX.Element> {
   const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
