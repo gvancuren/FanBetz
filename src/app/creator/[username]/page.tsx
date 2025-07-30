@@ -1,5 +1,3 @@
-// src/app/creator/[username]/page.tsx
-
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -15,6 +13,7 @@ import FollowButton from '@/components/FollowButton';
 import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
+import Image from 'next/image'; // ✅ added for optimized image handling
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +33,6 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-// ✅ Do NOT use PageProps — just inline the param type
 export default async function Page({ params }: { params: { username: string } }) {
   const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
@@ -89,7 +87,7 @@ export default async function Page({ params }: { params: { username: string } })
               initialImage={user.profileImage || '/default-avatar.png'}
             />
           ) : (
-            <img
+            <Image
               src={user.profileImage || '/default-avatar.png'}
               alt="Profile"
               width={120}
@@ -186,9 +184,11 @@ export default async function Page({ params }: { params: { username: string } })
                     <>
                       <p className="text-gray-300 whitespace-pre-wrap">{post.content}</p>
                       {post.imageUrl && (
-                        <img
+                        <Image
                           src={post.imageUrl}
                           alt="Post Image"
+                          width={800}
+                          height={400}
                           className="w-full rounded-lg object-cover max-h-[400px]"
                         />
                       )}
@@ -207,9 +207,11 @@ export default async function Page({ params }: { params: { username: string } })
                     <div className="relative overflow-hidden rounded-lg">
                       <div className="blur-sm pointer-events-none select-none">
                         {post.imageUrl && (
-                          <img
+                          <Image
                             src={post.imageUrl}
                             alt="Post Image"
+                            width={800}
+                            height={400}
                             className="w-full object-cover max-h-[400px]"
                           />
                         )}
