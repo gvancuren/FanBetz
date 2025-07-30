@@ -1,3 +1,5 @@
+// File: /src/app/api/updateprofilepicture/route.ts
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -14,15 +16,10 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('image') as File;
 
-    console.log('Session:', session.user.email);
-    console.log('FormData keys:', [...formData.keys()]);
-    console.log('File:', file?.name, file?.size);
-
     if (!file || file.size === 0) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // ✅ Convert file to base64 and upload to Cloudinary
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64 = buffer.toString('base64');
@@ -34,8 +31,7 @@ export async function POST(req: Request) {
 
     const imageUrl = uploadResult.secure_url;
 
-    // ✅ Save image URL in database
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { email: session.user.email },
       data: { profileImage: imageUrl },
     });

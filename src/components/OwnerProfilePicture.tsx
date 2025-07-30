@@ -30,7 +30,7 @@ export default function OwnerProfilePicture({
     const formData = new FormData();
     formData.append('image', selectedFile);
 
-    const res = await fetch('/api/updateprofilepicture', {
+    const res = await fetch('/api/update-profile-picture', {
       method: 'POST',
       body: formData,
     });
@@ -38,6 +38,8 @@ export default function OwnerProfilePicture({
     if (res.ok) {
       const { imageUrl } = await res.json();
       setPreview(imageUrl);
+    } else {
+      console.error('❌ Upload failed');
     }
 
     setUploading(false);
