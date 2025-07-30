@@ -92,7 +92,10 @@ export default async function Page({ params }: { params: { username: string } })
               alt="Profile"
               width={120}
               height={120}
-              className="rounded-full border-4 border-yellow-400 object-cover"
+              className="rounded-full border-4 border-yellow-400 object-cover bg-zinc-900"
+              onError={(e) => {
+                e.currentTarget.src = '/default-avatar.png';
+              }}
             />
           )}
 
