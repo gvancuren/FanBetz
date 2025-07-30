@@ -1,3 +1,5 @@
+// src/app/creator/[username]/page.tsx
+
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -13,7 +15,6 @@ import FollowButton from '@/components/FollowButton';
 import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
-import Image from 'next/image';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -33,14 +34,17 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({ params }: { params: { username: string } }) {
-  const username = decodeURIComponent(params.username).trim();
+// ✅ Updated: Await params in async route
+export default async function Page({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const decodedUsername = decodeURIComponent(username).trim();
+
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
 
   const user = await prisma.user.findFirst({
     where: {
-      name: { equals: username, mode: 'insensitive' },
+      name: { equals: decodedUsername, mode: 'insensitive' },
       isCreator: true,
     },
     include: {
@@ -87,15 +91,12 @@ export default async function Page({ params }: { params: { username: string } })
               initialImage={user.profileImage || '/default-avatar.png'}
             />
           ) : (
-            <Image
+            <img
               src={user.profileImage || '/default-avatar.png'}
               alt="Profile"
               width={120}
               height={120}
-              className="rounded-full border-4 border-yellow-400 object-cover bg-zinc-900"
-              onError={(e) => {
-                e.currentTarget.src = '/default-avatar.png';
-              }}
+              className="rounded-full border-4 border-yellow-400 object-cover"
             />
           )}
 
@@ -187,11 +188,9 @@ export default async function Page({ params }: { params: { username: string } })
                     <>
                       <p className="text-gray-300 whitespace-pre-wrap">{post.content}</p>
                       {post.imageUrl && (
-                        <Image
+                        <img
                           src={post.imageUrl}
                           alt="Post Image"
-                          width={800}
-                          height={400}
                           className="w-full rounded-lg object-cover max-h-[400px]"
                         />
                       )}
@@ -210,11 +209,9 @@ export default async function Page({ params }: { params: { username: string } })
                     <div className="relative overflow-hidden rounded-lg">
                       <div className="blur-sm pointer-events-none select-none">
                         {post.imageUrl && (
-                          <Image
+                          <img
                             src={post.imageUrl}
                             alt="Post Image"
-                            width={800}
-                            height={400}
                             className="w-full object-cover max-h-[400px]"
                           />
                         )}

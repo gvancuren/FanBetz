@@ -1,78 +1,70 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import Image from 'next/image';
 
-export default function ProfileImageForm() {
+interface OwnerProfilePictureProps {
+  userId: number;
+  initialImage?: string;
+}
+
+export default function OwnerProfilePicture({
+  userId,
+  initialImage = '/default-avatar.png',
+}: OwnerProfilePictureProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const router = useRouter();
+  const [preview, setPreview] = useState(initialImage);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return;
-
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const res = await fetch('/api/updateprofilepicture', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        router.refresh(); // ✅ refresh profile page after upload
-      } else {
-        const errorData = await res.json();
-        alert(errorData.error || 'Upload failed');
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      alert('Unexpected error during upload.');
-    } finally {
-      setUploading(false);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    setFile(selectedFile);
+    setPreview(URL.createObjectURL(selectedFile));
+    handleUpload(selectedFile);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-    if (selectedFile) {
-      const preview = URL.createObjectURL(selectedFile);
-      setPreviewUrl(preview);
-    } else {
-      setPreviewUrl(null);
+  const handleUpload = async (selectedFile: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    const res = await fetch('/api/updateprofilepicture', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const { imageUrl } = await res.json();
+      setPreview(imageUrl);
     }
+
+    setUploading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-      {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="Preview"
-          className="w-24 h-24 rounded-full object-cover border-2 border-yellow-400"
-        />
-      )}
-
+    <div
+      className="relative w-32 h-32 cursor-pointer group"
+      onClick={() => fileInputRef.current?.click()}
+    >
+      <Image
+        src={preview}
+        alt="Profile"
+        width={128}
+        height={128}
+        className="rounded-full border-4 border-yellow-400 object-cover w-32 h-32 bg-zinc-900"
+      />
+      <div className="absolute inset-0 rounded-full bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+        <span className="text-sm text-white font-medium">Edit</span>
+      </div>
       <input
+        ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={handleFileChange}
-        className="block text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"
+        onChange={handleChange}
+        className="hidden"
       />
-
-      <button
-        type="submit"
-        disabled={uploading || !file}
-        className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-300 disabled:opacity-50"
-      >
-        {uploading ? 'Uploading...' : 'Update Photo'}
-      </button>
-    </form>
+    </div>
   );
 }
