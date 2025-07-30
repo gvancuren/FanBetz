@@ -8,6 +8,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // ✅ Add support for external images from Cloudinary
+  images: {
+    domains: ['res.cloudinary.com'],
+  },
   // ✅ Optional: Force dynamic rendering for all routes
   experimental: {
     forceDynamic: true,
