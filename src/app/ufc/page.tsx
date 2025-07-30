@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma'; // ✅ Correct syntax
 import Image from 'next/image';
 import Link from 'next/link';
 
