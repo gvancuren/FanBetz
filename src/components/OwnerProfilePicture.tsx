@@ -1,68 +1,78 @@
 'use client';
 
-import Image from 'next/image';
-import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-type Props = {
-  userId: number;
-  initialImage: string;
-  onImageChange?: (newUrl: string) => void;
-};
+export default function ProfileImageForm() {
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const router = useRouter();
 
-export default function OwnerProfilePicture({ userId, initialImage, onImageChange }: Props) {
-  const [imageUrl, setImageUrl] = useState(initialImage);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!file) return;
+
+    setUploading(true);
 
     const formData = new FormData();
     formData.append('image', file);
-    formData.append('userId', String(userId));
 
-    const res = await fetch('/api/update-profile-picture', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const res = await fetch('/api/updateprofilepicture', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.user?.profileImage) {
-        setImageUrl(data.user.profileImage); // ✅ instantly updates preview
-        onImageChange?.(data.user.profileImage);
+      if (res.ok) {
+        router.refresh(); // ✅ refresh profile page after upload
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || 'Upload failed');
       }
-    } else {
-      alert('Failed to update profile image');
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert('Unexpected error during upload.');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleImageClick = () => {
-    inputRef.current?.click();
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    if (selectedFile) {
+      const preview = URL.createObjectURL(selectedFile);
+      setPreviewUrl(preview);
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   return (
-    <div className="relative group w-[120px] h-[120px]">
-      <div onClick={handleImageClick} className="cursor-pointer relative">
-        <Image
-          src={imageUrl || '/default-avatar.png'}
-          alt="Profile"
-          width={120}
-          height={120}
-          className="rounded-full border-4 border-yellow-400 object-cover hover:opacity-80 transition"
+    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      {previewUrl && (
+        <img
+          src={previewUrl}
+          alt="Preview"
+          className="w-24 h-24 rounded-full object-cover border-2 border-yellow-400"
         />
-        <div className="absolute inset-0 bg-black bg-opacity-50 text-white text-sm font-semibold items-center justify-center hidden group-hover:flex rounded-full">
-          Change
-        </div>
-      </div>
+      )}
+
       <input
-        ref={inputRef}
-        id="profile-upload"
         type="file"
         accept="image/*"
-        className="hidden"
         onChange={handleFileChange}
+        className="block text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"
       />
-    </div>
+
+      <button
+        type="submit"
+        disabled={uploading || !file}
+        className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-300 disabled:opacity-50"
+      >
+        {uploading ? 'Uploading...' : 'Update Photo'}
+      </button>
+    </form>
   );
 }
