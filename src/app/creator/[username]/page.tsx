@@ -19,13 +19,6 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// ✅ Fix: Proper typing for Next.js 15 dynamic route
-type Props = {
-  params: {
-    username: string;
-  };
-};
-
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -41,6 +34,7 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
+// ✅ Do NOT use PageProps — just inline the param type
 export default async function Page({ params }: { params: { username: string } }) {
   const username = decodeURIComponent(params.username).trim();
   const session = await getServerSession(authOptions);
