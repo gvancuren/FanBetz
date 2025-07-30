@@ -13,7 +13,7 @@ import FollowButton from '@/components/FollowButton';
 import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
-import Image from 'next/image'; // ✅ added for optimized image handling
+import Image from 'next/image';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
