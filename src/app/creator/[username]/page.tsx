@@ -34,7 +34,6 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-// ✅ Updated: Await params in async route
 export default async function Page({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   const decodedUsername = decodeURIComponent(username).trim();
@@ -102,7 +101,39 @@ export default async function Page({ params }: { params: Promise<{ username: str
 
           <div className="mt-4 sm:mt-0 text-center sm:text-left">
             <h1 className="text-3xl font-bold">{user.name}</h1>
-            <p className="text-gray-400 mt-1 whitespace-pre-wrap">{user.bio}</p>
+
+            {isOwner ? (
+              <form
+                action={async (formData) => {
+                  'use server';
+                  const bio = formData.get('bio') as string;
+
+                  await fetch('/api/update-bio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bio }),
+                  });
+                }}
+                className="mt-2"
+              >
+                <textarea
+                  name="bio"
+                  defaultValue={user.bio || ''}
+                  rows={3}
+                  placeholder="Enter your bio..."
+                  className="w-full bg-zinc-800 text-white p-2 rounded border border-zinc-700"
+                />
+                <button
+                  type="submit"
+                  className="mt-2 bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-300 font-bold transition"
+                >
+                  Save Bio
+                </button>
+              </form>
+            ) : (
+              <p className="text-gray-400 mt-1 whitespace-pre-wrap">{user.bio || 'No bio set.'}</p>
+            )}
+
             <p className="text-sm text-gray-400 mt-2">
               {user.followersList.length} followers •{' '}
               <Link
