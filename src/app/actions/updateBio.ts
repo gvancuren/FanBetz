@@ -4,12 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function updateBio(bio: string) {
+export async function updateBio(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) throw new Error('Not authenticated');
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bio = formData.get('bio') as string;
 
   await prisma.user.update({
-    where: { email: session.user.email },
+    where: { id: session.user.id },
     data: { bio },
   });
 }
