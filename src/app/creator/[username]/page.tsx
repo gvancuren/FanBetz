@@ -15,6 +15,7 @@ import FollowButton from '@/components/FollowButton';
 import Link from 'next/link';
 import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
+import { updateBio } from '@/app/actions/updateBio';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -99,23 +100,11 @@ export default async function Page({ params }: { params: Promise<{ username: str
             />
           )}
 
-          <div className="mt-4 sm:mt-0 text-center sm:text-left">
+          <div className="mt-4 sm:mt-0 text-center sm:text-left w-full">
             <h1 className="text-3xl font-bold">{user.name}</h1>
 
             {isOwner ? (
-              <form
-                action={async (formData) => {
-                  'use server';
-                  const bio = formData.get('bio') as string;
-
-                  await fetch('/api/update-bio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bio }),
-                  });
-                }}
-                className="mt-2"
-              >
+              <form action={updateBio} className="mt-2">
                 <textarea
                   name="bio"
                   defaultValue={user.bio || ''}
