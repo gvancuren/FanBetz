@@ -4,14 +4,12 @@ import Link from 'next/link';
 import SearchBar from './SearchBar';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 export default function Header() {
   const { data: session } = useSession();
   const router = useRouter();
 
   const username = session?.user?.name;
-  const profileImage = session?.user?.profileImage;
 
   return (
     <header className="bg-black border-b border-yellow-400 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 z-50 shadow-md">
@@ -50,19 +48,9 @@ export default function Header() {
             {username && (
               <Link
                 href={`/creator/${encodeURIComponent(username)}`}
-                className="flex items-center gap-2 hover:text-yellow-400 transition"
+                className="hover:text-yellow-400 transition"
               >
-                <Image
-                  src={profileImage || '/default-avatar.png'}
-                  alt="Profile"
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover bg-zinc-900"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-avatar.png';
-                  }}
-                />
-                <span className="hidden sm:inline">Profile</span>
+                Profile
               </Link>
             )}
             <button
