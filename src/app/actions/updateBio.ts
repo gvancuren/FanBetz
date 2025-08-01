@@ -11,7 +11,7 @@ export async function updateBio(formData: FormData) {
   const bio = formData.get('bio') as string;
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: Number(session.user.id) }, // ✅ Fix: convert to number
     data: { bio },
   });
 }
