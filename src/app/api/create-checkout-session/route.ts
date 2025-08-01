@@ -32,8 +32,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
 
+  // ✅ Convert creatorId to number before querying
   const creator = await prisma.user.findUnique({
-    where: { id: creatorId },
+    where: { id: Number(creatorId) },
   });
 
   if (!creator || !creator.stripeAccountId) {
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
         : undefined,
       metadata: {
         creatorId: String(creatorId),
-        userId: String(user.id), // ✅ FIXED: typed user ID
+        userId: String(user.id),
         type,
         postId: postId || '',
       },
