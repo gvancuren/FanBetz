@@ -1,14 +1,12 @@
 // src/app/api/create-checkout-session/route.ts
 
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16', // ✅ Use stable API version for deploy safety
-});
+// ✅ Use CommonJS-style require to avoid Vercel build crashes
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 interface CustomUser {
   id: number;
@@ -51,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const sessionPayload: Stripe.Checkout.SessionCreateParams = {
+    const sessionPayload = {
       mode: isSubscription ? 'subscription' : 'payment',
       payment_method_types: ['card'],
       line_items: isSubscription
@@ -81,7 +79,7 @@ export async function POST(req: Request) {
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?canceled=1`,
-    };
+    } as any;
 
     if (isSubscription) {
       sessionPayload.subscription_data = {

@@ -1,12 +1,12 @@
+// src/app/api/create-connected-account/route.ts
+
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+// ✅ Use CommonJS-style require for compatibility with Vercel
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -15,7 +15,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = parseInt(session.user.id, 10);
+  const userId = parseInt(session.user.id as any, 10); // Cast to `any` in case ID is string
   if (isNaN(userId)) {
     return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
   }
@@ -26,22 +26,26 @@ export async function POST() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
+  // ✅ Reuse existing Stripe account if already connected
   if (user.stripeAccountId) {
     return NextResponse.json({
       url: `https://dashboard.stripe.com/connect/accounts/${user.stripeAccountId}`,
     });
   }
 
+  // ✅ Create new Stripe Express account
   const account = await stripe.accounts.create({
     type: 'express',
     email: session.user.email || undefined,
   });
 
+  // ✅ Save Stripe account ID to user
   await prisma.user.update({
     where: { id: userId },
     data: { stripeAccountId: account.id },
   });
 
+  // ✅ Create onboarding link
   const accountLink = await stripe.accountLinks.create({
     account: account.id,
     refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/refresh`,

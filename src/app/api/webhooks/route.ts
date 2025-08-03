@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+// src/app/api/webhooks/route.ts
+
 import { prisma } from '@/lib/prisma';
 
 export const config = {
@@ -8,9 +8,8 @@ export const config = {
   },
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+// ✅ Use CommonJS-style require to avoid Vercel edge build errors
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature') as string;
@@ -29,8 +28,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    // ✅ Handle subscription renewal
     if (event.type === 'invoice.payment_succeeded') {
-      const invoice = event.data.object as Stripe.Invoice;
+      const invoice = event.data.object;
       const firstLine = invoice.lines?.data?.[0];
       const stripeSubId = typeof firstLine?.subscription === 'string' ? firstLine.subscription : '';
 
@@ -60,8 +60,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // ✅ Handle successful checkout
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const metadata = session.metadata;
       if (!metadata) throw new Error('Missing metadata');
 
