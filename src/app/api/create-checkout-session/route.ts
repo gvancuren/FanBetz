@@ -1,3 +1,5 @@
+// src/app/api/create-checkout-session/route.ts
+
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
@@ -5,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
+  apiVersion: '2023-10-16', // ✅ Use stable API version for deploy safety
 });
 
 interface CustomUser {
@@ -44,12 +46,12 @@ export async function POST(req: Request) {
   const priceId = type === 'weekly' ? creator.weeklyPriceId : creator.monthlyPriceId;
 
   if (isSubscription && !priceId) {
-    console.error('❌ Missing price ID for subscription type:', type);
+    console.error(`❌ Missing price ID for subscription type: ${type}`);
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
   try {
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const sessionPayload: Stripe.Checkout.SessionCreateParams = {
       mode: isSubscription ? 'subscription' : 'payment',
       payment_method_types: ['card'],
       line_items: isSubscription
@@ -71,22 +73,6 @@ export async function POST(req: Request) {
               quantity: 1,
             },
           ],
-      payment_intent_data: !isSubscription
-        ? {
-            application_fee_amount: Math.round(amount * 0.2),
-            transfer_data: {
-              destination: creator.stripeAccountId,
-            },
-          }
-        : undefined,
-      subscription_data: isSubscription
-        ? {
-            application_fee_percent: 20,
-            transfer_data: {
-              destination: creator.stripeAccountId,
-            },
-          }
-        : undefined,
       metadata: {
         creatorId: String(creatorId),
         userId: String(user.id),
@@ -95,7 +81,25 @@ export async function POST(req: Request) {
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?canceled=1`,
-    });
+    };
+
+    if (isSubscription) {
+      sessionPayload.subscription_data = {
+        application_fee_percent: 20,
+        transfer_data: {
+          destination: creator.stripeAccountId,
+        },
+      };
+    } else {
+      sessionPayload.payment_intent_data = {
+        application_fee_amount: Math.round(amount * 0.2),
+        transfer_data: {
+          destination: creator.stripeAccountId,
+        },
+      };
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create(sessionPayload);
 
     console.log(`✅ Stripe checkout session created: ${checkoutSession.id}`);
     return NextResponse.json({ url: checkoutSession.url });
