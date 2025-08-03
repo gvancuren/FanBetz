@@ -17,7 +17,7 @@ export async function likePost(postId: number, userId: number) {
   const typedUser = session?.user as CustomUser | undefined;
 
   if (!typedUser?.id || typedUser.id !== userId) {
-    console.error('Unauthorized like attempt');
+    console.error('❌ Unauthorized like attempt');
     return;
   }
 
@@ -32,6 +32,7 @@ export async function likePost(postId: number, userId: number) {
     await prisma.postLike.delete({
       where: { id: existingLike.id },
     });
+    console.log(`❌ Unliked post ${postId}`);
   } else {
     await prisma.postLike.create({
       data: {
@@ -39,7 +40,12 @@ export async function likePost(postId: number, userId: number) {
         postId,
       },
     });
+    console.log(`✅ Liked post ${postId}`);
   }
 
-  revalidatePath(`/creator/${typedUser.id}`);
+  if (typedUser.name) {
+    revalidatePath(`/creator/${typedUser.name}`);
+  } else {
+    console.warn('⚠ Cannot revalidate: username missing');
+  }
 }

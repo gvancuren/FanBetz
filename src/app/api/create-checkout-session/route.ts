@@ -8,7 +8,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
 });
 
-// ✅ Add proper user typing
 interface CustomUser {
   id: number;
   name?: string | null;
@@ -21,7 +20,7 @@ export async function POST(req: Request) {
   const user = session?.user as CustomUser | undefined;
 
   if (!user?.id) {
-    console.error('❌ Unauthorized: no session found');
+    console.error('❌ Unauthorized: no session');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -32,7 +31,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
 
-  // ✅ Convert creatorId to number before querying
   const creator = await prisma.user.findUnique({
     where: { id: Number(creatorId) },
   });
@@ -46,7 +44,7 @@ export async function POST(req: Request) {
   const priceId = type === 'weekly' ? creator.weeklyPriceId : creator.monthlyPriceId;
 
   if (isSubscription && !priceId) {
-    console.error('❌ Missing Stripe price ID for creator’s subscription:', type);
+    console.error('❌ Missing price ID for subscription type:', type);
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
@@ -93,15 +91,16 @@ export async function POST(req: Request) {
         creatorId: String(creatorId),
         userId: String(user.id),
         type,
-        postId: postId || '',
+        postId: postId ? String(postId) : '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?canceled=1`,
     });
 
+    console.log(`✅ Stripe checkout session created: ${checkoutSession.id}`);
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
-    console.error('❌ Stripe session error:', error.message || error);
+    console.error('❌ Stripe session creation failed:', error.message || error);
     return NextResponse.json({ error: 'Unable to create checkout session' }, { status: 500 });
   }
 }

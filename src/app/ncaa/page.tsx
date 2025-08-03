@@ -1,14 +1,40 @@
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NCAAPage() {
-  const posts = await prisma.post.findMany({
-    where: { category: 'NCAA' },
-    include: { user: true },
+  const session = await getServerSession(authOptions);
+  const rawUserId = session?.user?.id;
+  const currentUserId = rawUserId ? parseInt(rawUserId.toString()) : undefined;
+
+  const ncaaPosts = await prisma.post.findMany({
+    where: {
+      category: 'NCAA', // ✅ Prisma enum match
+    },
     orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        include: {
+          subscriptions: currentUserId
+            ? {
+                where: {
+                  subscriberId: currentUserId,
+                  expiresAt: { gte: new Date() },
+                },
+              }
+            : undefined,
+        },
+      },
+      unlocks: currentUserId
+        ? {
+            where: { userId: currentUserId },
+          }
+        : undefined,
+    },
   });
 
   return (
@@ -18,32 +44,45 @@ export default async function NCAAPage() {
         View all the latest NCAA picks, insights, and strategies shared by FanBetz creators.
       </p>
 
-      {posts.length === 0 ? (
+      {ncaaPosts.length === 0 ? (
         <p className="text-gray-500">No NCAA picks yet. Check back soon!</p>
       ) : (
         <div className="grid gap-6">
-          {posts.map((post) => (
-            <div key={post.id} className="bg-zinc-800 p-6 rounded-xl shadow">
-              <Link href={`/creator/${post.user.name}`}>
-                <h2 className="text-2xl font-semibold text-yellow-300 hover:underline">
-                  {post.title}
-                </h2>
-              </Link>
-              <p className="text-gray-400 mb-2 text-sm">by {post.user.name}</p>
-              <p className="text-gray-200">{post.content}</p>
-              {post.imageUrl && (
-                <div className="mt-4">
-                  <Image
-                    src={post.imageUrl}
-                    alt="Post image"
-                    width={600}
-                    height={400}
-                    className="rounded-xl"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
+          {ncaaPosts.map((post) => {
+            const isUnlocked =
+              (post.unlocks?.length ?? 0) > 0 ||
+              (post.user?.subscriptions?.length ?? 0) > 0;
+
+            return (
+              <div key={post.id} className="bg-zinc-800 p-6 rounded-xl shadow">
+                <Link href={`/creator/${post.user.name}`}>
+                  <h2 className="text-2xl font-semibold text-yellow-300 hover:underline">
+                    {post.title}
+                  </h2>
+                </Link>
+                <p className="text-gray-400 mb-2 text-sm">by {post.user.name}</p>
+
+                {isUnlocked ? (
+                  <>
+                    <p className="text-gray-200">{post.content}</p>
+                    {post.imageUrl && (
+                      <div className="mt-4">
+                        <Image
+                          src={post.imageUrl}
+                          alt="Post image"
+                          width={600}
+                          height={400}
+                          className="rounded-xl"
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="italic text-gray-500">🔒 Locked — unlock to view this pick</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,7 +1,14 @@
-// /src/app/api/webhooks/route.ts
+// src/app/api/webhooks/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
+
+// ✅ Required to allow Stripe raw body parsing
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
@@ -9,7 +16,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature') as string;
-
   let event;
 
   try {
@@ -25,7 +31,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ✅ Auto-renew handler
+    // ✅ Subscription renewal handler
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
       const firstLine = invoice.lines?.data?.[0];
@@ -58,10 +64,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Handle checkout session completion
+    // ✅ Handle checkout.session.completed
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-
       const metadata = session.metadata;
       if (!metadata) throw new Error('Missing metadata');
 
@@ -102,9 +107,12 @@ export async function POST(req: Request) {
         });
 
         console.log(`✅ Subscription saved for ${plan} plan`);
-      } else if (plan === 'post') {
+      }
+
+      if (plan === 'post') {
         const postId = parseInt(metadata.postId);
         if (isNaN(postId)) throw new Error('Invalid post ID');
+
         await prisma.postUnlock.create({
           data: {
             userId: subscriberId,

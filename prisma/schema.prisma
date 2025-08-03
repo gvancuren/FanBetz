@@ -8,63 +8,56 @@ datasource db {
 }
 
 model User {
-  id              Int             @id @default(autoincrement())
-  email           String          @unique
-  name            String          @unique
-  password        String?
-  isCreator       Boolean         @default(false)
-
+  id              Int            @id @default(autoincrement())
+  email           String         @unique
+  name            String         @unique
+  isCreator       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
   profileImage    String?
   bio             String?
-  createdAt       DateTime        @default(now())
-
-  weeklyPrice     Int?
+  password        String?
   monthlyPrice    Int?
+  weeklyPrice     Int?
+  earnings        Int            @default(0)
+  payoutTotal     Int            @default(0)
+  stripeAccountId String?
+  monthlyPriceId  String?
   stripeProductId String?
   weeklyPriceId   String?
-  monthlyPriceId  String?
-
-  earnings        Int             @default(0)
-  payoutTotal     Int             @default(0)
-  stripeAccountId String?
-
-  // Relations
+  comments        Comment[]
+  followingList   Follow[]       @relation("Following")
+  followersList   Follow[]       @relation("Followers")
   picks           Pick[]
   posts           Post[]
-  subscriptions   Subscription[]  @relation("Subscriber")
-  subscribers     Subscription[]  @relation("Creator")
-  postUnlocks     PostUnlock[]
-  comments        Comment[]
   postLikes       PostLike[]
-  followingList   Follow[]        @relation("Following")
-  followersList   Follow[]        @relation("Followers")
+  postUnlocks     PostUnlock[]
+  subscribers     Subscription[] @relation("Creator")
+  subscriptions   Subscription[] @relation("Subscriber")
 }
 
 model Follow {
-  id           Int  @id @default(autoincrement())
-  follower     User @relation("Following", fields: [followerId], references: [id])
-  followerId   Int
-  following    User @relation("Followers", fields: [followingId], references: [id])
-  followingId  Int
+  id          Int  @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  follower    User @relation("Following", fields: [followerId], references: [id])
+  following   User @relation("Followers", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
-  title      String
-  content    String
-  imageUrl   String?
-  price      Int?
-  category   Category?
-  createdAt  DateTime   @default(now())
-
-  user       User       @relation(fields: [userId], references: [id])
-  userId     Int
-
-  unlocks    PostUnlock[]
-  comments   Comment[]
-  likes      PostLike[]
+  id        Int          @id @default(autoincrement())
+  content   String
+  imageUrl  String?
+  createdAt DateTime     @default(now())
+  userId    Int
+  price     Int?
+  title     String
+  category  Category?
+  comments  Comment[]
+  user      User         @relation(fields: [userId], references: [id])
+  likes     PostLike[]
+  unlocks   PostUnlock[]
 }
 
 model Pick {
@@ -74,30 +67,29 @@ model Pick {
   market     String
   prediction String
   createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id])
   userId     Int
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model PostUnlock {
-  id      Int   @id @default(autoincrement())
-  user    User  @relation(fields: [userId], references: [id])
-  userId  Int
-  post    Post  @relation(fields: [postId], references: [id])
-  postId  Int
+  id     Int  @id @default(autoincrement())
+  userId Int
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 }
 
 model Subscription {
   id                   Int      @id @default(autoincrement())
-  subscriber           User     @relation("Subscriber", fields: [subscriberId], references: [id])
-  subscriberId         Int
-  creator              User     @relation("Creator", fields: [creatorId], references: [id])
   creatorId            Int
-  plan                 String
-  price                Int      // ✅ Added to support upsert code
-  expiresAt            DateTime
   createdAt            DateTime @default(now())
+  plan                 String
+  subscriberId         Int
+  expiresAt            DateTime
   stripeSubscriptionId String?
+  price                Int
+  creator              User     @relation("Creator", fields: [creatorId], references: [id])
+  subscriber           User     @relation("Subscriber", fields: [subscriberId], references: [id])
 
   @@unique([subscriberId, creatorId])
 }
@@ -106,21 +98,19 @@ model Comment {
   id        Int      @id @default(autoincrement())
   content   String
   createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  post      Post     @relation(fields: [postId], references: [id])
   postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model PostLike {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  post      Post     @relation(fields: [postId], references: [id])
   postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, postId])
 }
