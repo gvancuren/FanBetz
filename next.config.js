@@ -12,10 +12,8 @@ const nextConfig = {
   images: {
     domains: ['res.cloudinary.com'],
   },
-  // ✅ Optional: Force dynamic rendering for all routes
-  experimental: {
-    forceDynamic: true,
-  },
+  // ✅ Cleaned up invalid config key
+  // If you're using any valid experimental features, add them here
 };
 
 module.exports = nextConfig;
