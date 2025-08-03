@@ -3,12 +3,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import Stripe from 'stripe';
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -17,7 +13,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = Number(session.user.id); // ✅ Convert to number
+  const userId = Number(session.user.id);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -26,6 +22,11 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
+
+  // ✅ Initialize Stripe with secret key and correct API version
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-06-30.basil',
+  });
 
   let accountId = user.stripeAccountId;
 

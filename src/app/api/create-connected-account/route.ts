@@ -1,12 +1,9 @@
-// src/app/api/create-connected-account/route.ts
+// ✅ src/app/api/create-connected-account/route.ts
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-// ✅ Use CommonJS-style require for compatibility with Vercel
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -25,6 +22,12 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
+
+  // ✅ Move Stripe require inside route to avoid build errors
+  const Stripe = require('stripe');
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-06-30.basil',
+  });
 
   // ✅ Reuse existing Stripe account if already connected
   if (user.stripeAccountId) {
@@ -46,10 +49,11 @@ export async function POST() {
   });
 
   // ✅ Create onboarding link
+  const origin = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const accountLink = await stripe.accountLinks.create({
     account: account.id,
-    refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/refresh`,
-    return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/complete`,
+    refresh_url: `${origin}/onboarding/refresh`,
+    return_url: `${origin}/onboarding/complete`,
     type: 'account_onboarding',
   });
 

@@ -62,6 +62,7 @@ export async function POST(req: Request) {
           destination: creator.stripeAccountId,
         },
       },
+      // ✅ Include required metadata for webhook logic
       metadata: {
         userId: String(session.user.id),
         creatorId: String(creator.id),
