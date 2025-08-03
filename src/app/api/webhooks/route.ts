@@ -1,9 +1,7 @@
-// src/app/api/webhooks/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
-// ✅ Required to allow Stripe raw body parsing
 export const config = {
   api: {
     bodyParser: false,
@@ -31,7 +29,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ✅ Subscription renewal handler
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
       const firstLine = invoice.lines?.data?.[0];
@@ -48,7 +45,6 @@ export async function POST(req: Request) {
 
       if (userSub) {
         const newExpiresAt = new Date(userSub.expiresAt);
-
         if (userSub.plan === 'weekly') {
           newExpiresAt.setDate(newExpiresAt.getDate() + 7);
         } else if (userSub.plan === 'monthly') {
@@ -64,7 +60,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Handle checkout.session.completed
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata;
@@ -82,7 +77,6 @@ export async function POST(req: Request) {
         const creator = await prisma.user.findUnique({
           where: { id: creatorId },
         });
-
         if (!creator) throw new Error('Creator not found');
 
         const priceCents = plan === 'weekly' ? creator.weeklyPrice : creator.monthlyPrice;
