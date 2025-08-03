@@ -1,29 +1,43 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
-// ✅ Use CommonJS require to prevent Vercel build-time evaluation
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
-
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };
 
-export async function POST(req: Request) {
-  const sig = req.headers.get('stripe-signature') as string;
-  let event;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
+
+// Buffer helper
+async function buffer(readable: ReadableStream<Uint8Array>) {
+  const reader = readable.getReader();
+  const chunks = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+
+  return Buffer.concat(chunks);
+}
+
+// Main webhook handler
+export async function POST(req: NextRequest) {
+  const rawBody = await buffer(req.body as any);
+  const sig = req.headers.get('stripe-signature')!;
+
+  let event: Stripe.Event;
 
   try {
-    const body = await req.text();
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    console.log('🎯 Stripe Event Type:', event.type);
+    console.log('📦 Payload:', JSON.stringify(event.data.object, null, 2));
   } catch (err: any) {
     console.error('❌ Webhook signature verification failed:', err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
   try {
@@ -32,10 +46,7 @@ export async function POST(req: Request) {
       const firstLine = invoice.lines?.data?.[0];
       const stripeSubId = typeof firstLine?.subscription === 'string' ? firstLine.subscription : '';
 
-      if (!stripeSubId) {
-        console.warn('⚠️ Missing subscription ID on invoice');
-        return new Response('No subscription ID', { status: 400 });
-      }
+      if (!stripeSubId) return new NextResponse('No subscription ID', { status: 400 });
 
       const userSub = await prisma.subscription.findFirst({
         where: { stripeSubscriptionId: stripeSubId },
@@ -43,11 +54,9 @@ export async function POST(req: Request) {
 
       if (userSub) {
         const newExpiresAt = new Date(userSub.expiresAt);
-        if (userSub.plan === 'weekly') {
-          newExpiresAt.setDate(newExpiresAt.getDate() + 7);
-        } else if (userSub.plan === 'monthly') {
-          newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
-        }
+        userSub.plan === 'weekly'
+          ? newExpiresAt.setDate(newExpiresAt.getDate() + 7)
+          : newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
 
         await prisma.subscription.update({
           where: { id: userSub.id },
@@ -69,28 +78,18 @@ export async function POST(req: Request) {
 
       console.log(`📦 Checkout completed: plan=${plan}, subscriberId=${subscriberId}, creatorId=${creatorId}`);
 
-      if (isNaN(subscriberId) || isNaN(creatorId)) {
-        throw new Error(`Invalid subscriber (${subscriberId}) or creator (${creatorId}) ID`);
-      }
-
       if (plan === 'weekly' || plan === 'monthly') {
         const creator = await prisma.user.findUnique({ where: { id: creatorId } });
-        if (!creator) throw new Error('Creator not found');
-
-        const priceCents = plan === 'weekly' ? creator.weeklyPrice : creator.monthlyPrice;
-        if (!priceCents) throw new Error('Missing price on creator profile');
-
+        const priceCents = plan === 'weekly' ? creator?.weeklyPrice : creator?.monthlyPrice;
         const expiresAt = new Date();
-        if (plan === 'weekly') {
-          expiresAt.setDate(expiresAt.getDate() + 7);
-        } else {
-          expiresAt.setMonth(expiresAt.getMonth() + 1);
-        }
+        plan === 'weekly'
+          ? expiresAt.setDate(expiresAt.getDate() + 7)
+          : expiresAt.setMonth(expiresAt.getMonth() + 1);
 
         await prisma.subscription.create({
           data: {
             plan,
-            price: priceCents,
+            price: priceCents || 0,
             expiresAt,
             subscriber: { connect: { id: subscriberId } },
             creator: { connect: { id: creatorId } },
@@ -98,36 +97,25 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`✅ Subscription saved: ${plan} plan, user ${subscriberId}`);
+        console.log(`✅ Subscription created: ${plan} plan for user ${subscriberId}`);
       }
 
       if (plan === 'post') {
         const postId = parseInt(metadata.postId);
-        console.log(`🔓 Post unlock triggered: postId=${postId}, userId=${subscriberId}`);
+        await prisma.postUnlock.create({
+          data: {
+            userId: subscriberId,
+            postId,
+          },
+        });
 
-        if (isNaN(postId)) {
-          throw new Error(`Invalid post ID: ${metadata.postId}`);
-        }
-
-        try {
-          const unlock = await prisma.postUnlock.create({
-            data: {
-              userId: subscriberId,
-              postId,
-            },
-          });
-
-          console.log(`✅ Post unlock saved:`, unlock);
-        } catch (err: any) {
-          console.error(`❌ Failed to save post unlock for post ${postId}, user ${subscriberId}:`, err.message);
-          return new Response(`Failed to save post unlock`, { status: 500 });
-        }
+        console.log(`🔓 Post unlocked: user ${subscriberId}, post ${postId}`);
       }
     }
 
-    return new Response('Webhook received', { status: 200 });
+    return new NextResponse('Webhook received', { status: 200 });
   } catch (err: any) {
-    console.error('❌ Webhook handler failed:', err.message || err);
-    return new Response('Webhook handler failed', { status: 500 });
+    console.error('❌ Webhook handler error:', err.message || err);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
