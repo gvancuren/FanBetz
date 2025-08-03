@@ -1,10 +1,10 @@
-// API route to update subscription pricing and create Stripe productsimport { NextResponse } from 'next/server';
+// src/app/api/update-subscription-settings/route.ts
+
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createStripePricesForCreator } from '@/app/actions/createStripePricesForCreator';
-import { NextResponse } from 'next/server';
-
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -29,7 +29,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Save prices in DB
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Now create Stripe prices dynamically
+    // ✅ Ensure this function uses CommonJS require for Stripe inside it
     await createStripePricesForCreator(updatedUser);
 
     return NextResponse.json({ success: true });

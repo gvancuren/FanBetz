@@ -1,11 +1,6 @@
 'use server';
 
-import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil', // ✅ Updated to match Stripe types
-});
 
 /**
  * Dynamically creates a Stripe Product and two recurring Price objects for a creator,
@@ -18,6 +13,12 @@ export async function createStripePricesForCreator(user: {
   monthlyPrice: number | null;
 }) {
   if (!user.weeklyPrice && !user.monthlyPrice) return;
+
+  // ✅ Stripe safely initialized inside the function
+  const Stripe = require('stripe');
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-06-30.basil',
+  });
 
   // Create or update Product in Stripe
   const product = await stripe.products.create({

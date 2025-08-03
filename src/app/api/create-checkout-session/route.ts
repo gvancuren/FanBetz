@@ -1,12 +1,8 @@
 // src/app/api/create-checkout-session/route.ts
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-// ✅ Use CommonJS-style require to avoid Vercel build crashes
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 interface CustomUser {
   id: number;
@@ -47,6 +43,12 @@ export async function POST(req: Request) {
     console.error(`❌ Missing price ID for subscription type: ${type}`);
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
+
+  // ✅ Initialize Stripe inside function (safe for Vercel)
+  const Stripe = require('stripe');
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-06-30.basil',
+  });
 
   try {
     const sessionPayload = {
