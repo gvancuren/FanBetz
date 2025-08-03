@@ -24,96 +24,89 @@ async function buffer(readable: ReadableStream<Uint8Array>) {
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody = await buffer(req.body as any);
-  const sig = req.headers.get('stripe-signature')!;
-
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
-    console.log('🎯 Stripe Event Type:', event.type);
-    console.log('📦 Payload:', JSON.stringify(event.data.object, null, 2));
+    const rawBody = await buffer(req.body as any);
+    const sig = req.headers.get('stripe-signature')!;
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+
+    console.log('🎯 Stripe Event:', event.type);
   } catch (err: any) {
-    console.error('❌ Webhook signature verification failed:', err.message);
+    console.error('❌ Signature Verification Error:', err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // 🔍 Test DB call to isolate Prisma connection issue
   try {
-    console.log('🚦 Testing Prisma connection...');
-    const test = await prisma.user.findFirst(); // any harmless query
-    console.log('🧠 Prisma connected successfully');
-  } catch (err: any) {
-    console.error('❌ Prisma DB connection failed:', err.message);
-    return new NextResponse('Database connection error', { status: 500 });
-  }
-
-  try {
+    // 🔁 Subscription renewal logic
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
-      const firstLine = invoice.lines?.data?.[0];
+      const firstLine = invoice.lines.data[0];
       const stripeSubId = typeof firstLine?.subscription === 'string' ? firstLine.subscription : '';
 
       if (!stripeSubId) return new NextResponse('No subscription ID', { status: 400 });
 
-      const userSub = await prisma.subscription.findFirst({
+      const sub = await prisma.subscription.findFirst({
         where: { stripeSubscriptionId: stripeSubId },
       });
 
-      if (userSub) {
-        const newExpiresAt = new Date(userSub.expiresAt);
-        userSub.plan === 'weekly'
+      if (sub) {
+        const newExpiresAt = new Date(sub.expiresAt);
+        sub.plan === 'weekly'
           ? newExpiresAt.setDate(newExpiresAt.getDate() + 7)
           : newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
 
         await prisma.subscription.update({
-          where: { id: userSub.id },
+          where: { id: sub.id },
           data: { expiresAt: newExpiresAt },
         });
 
-        console.log(`🔁 Subscription renewed. New expiresAt: ${newExpiresAt.toISOString()}`);
+        console.log(`🔁 Renewed: ${sub.plan} until ${newExpiresAt.toISOString()}`);
       }
     }
 
+    // 🧾 Checkout completed logic
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata;
-      if (!metadata) throw new Error('Missing metadata');
+      if (!metadata) throw new Error('Missing metadata in checkout session');
 
-      const plan = metadata.type;
-      const subscriberId = parseInt(metadata.userId);
-      const creatorId = parseInt(metadata.creatorId);
+      const { userId, creatorId, postId, type } = metadata;
+      const subscriberId = parseInt(userId);
+      const creatorIdInt = parseInt(creatorId);
 
-      console.log(`📦 Checkout completed: plan=${plan}, subscriberId=${subscriberId}, creatorId=${creatorId}`);
+      if (type === 'weekly' || type === 'monthly') {
+        const creator = await prisma.user.findUnique({ where: { id: creatorIdInt } });
+        const price = type === 'weekly' ? creator?.weeklyPrice : creator?.monthlyPrice;
 
-      if (plan === 'weekly' || plan === 'monthly') {
-        const creator = await prisma.user.findUnique({ where: { id: creatorId } });
-        const priceCents = plan === 'weekly' ? creator?.weeklyPrice : creator?.monthlyPrice;
         const expiresAt = new Date();
-        plan === 'weekly'
+        type === 'weekly'
           ? expiresAt.setDate(expiresAt.getDate() + 7)
           : expiresAt.setMonth(expiresAt.getMonth() + 1);
 
         await prisma.subscription.create({
           data: {
-            plan,
-            price: priceCents || 0,
+            plan: type,
+            price: price || 0,
             expiresAt,
-            subscriber: { connect: { id: subscriberId } },
-            creator: { connect: { id: creatorId } },
             stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
+            subscriber: { connect: { id: subscriberId } },
+            creator: { connect: { id: creatorIdInt } },
           },
         });
 
-        console.log(`✅ Subscription created: ${plan} plan for user ${subscriberId}`);
+        console.log(`✅ Subscription created: ${type} plan for user ${subscriberId}`);
       }
 
-      if (plan === 'post') {
-        const postId = parseInt(metadata.postId);
+      if (type === 'post' && postId) {
         await prisma.postUnlock.create({
           data: {
             userId: subscriberId,
-            postId,
+            postId: parseInt(postId),
           },
         });
 
@@ -121,9 +114,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return new NextResponse('Webhook received', { status: 200 });
+    return new NextResponse('Webhook processed', { status: 200 });
   } catch (err: any) {
-    console.error('❌ Webhook handler error:', err.message || err);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('❌ Handler Error:', err.message || err);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
