@@ -1,8 +1,10 @@
-// ✅ src/app/api/user-subscription/route.ts
+// src/app/api/user-subscription/route.ts
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getStripeInstance } from '@/lib/stripe'; // ✅ Safe Stripe init helper
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -34,11 +36,7 @@ export async function POST(req: Request) {
 
   const feeCents = Math.floor(priceCents * 0.2); // 20% platform fee
 
-  // ✅ Move Stripe inside the handler function
-  const Stripe = require('stripe');
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-06-30.basil',
-  });
+  const stripe = getStripeInstance(); // ✅ Use helper for safe Stripe import
 
   try {
     const stripeSession = await stripe.checkout.sessions.create({

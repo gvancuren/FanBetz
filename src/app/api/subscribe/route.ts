@@ -1,14 +1,9 @@
-// src/app/api/subscribe/route.ts
+// ✅ src/app/api/subscribe/route.ts
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-// ✅ Stripe safely required for Vercel compatibility
-const Stripe = require('stripe');
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+import { getStripeInstance } from '@/lib/stripe'; // ✅ Import safe runtime Stripe loader
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -22,6 +17,8 @@ export async function POST(req: Request) {
   if (!creatorId || !plan || typeof amount !== 'number') {
     return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
   }
+
+  const stripe = getStripeInstance(); // ✅ Runtime-safe Stripe usage
 
   try {
     const stripeSession = await stripe.checkout.sessions.create({

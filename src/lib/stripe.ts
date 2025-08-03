@@ -1,5 +1,8 @@
-import Stripe from 'stripe';
+// lib/stripe.ts (SAFE for server functions)
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-06-30.basil',
-});
+export function getStripeInstance() {
+  const Stripe = require('stripe');
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-06-30.basil',
+  });
+}

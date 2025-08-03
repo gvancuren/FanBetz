@@ -1,4 +1,4 @@
-// ✅ src/app/api/update-subscription-settings/route.ts
+// src/app/api/update-subscription-settings/route.ts
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -24,7 +24,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { weeklyPrice, monthlyPrice } = body;
 
-  if (typeof weeklyPrice !== 'number' || typeof monthlyPrice !== 'number') {
+  if (
+    (weeklyPrice !== null && typeof weeklyPrice !== 'number') ||
+    (monthlyPrice !== null && typeof monthlyPrice !== 'number')
+  ) {
     return NextResponse.json({ error: 'Invalid prices' }, { status: 400 });
   }
 
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // ✅ Create Stripe product + price IDs only after DB update
+    // ✅ Create or update Stripe product and pricing entries
     await createStripePricesForCreator(updatedUser);
 
     return NextResponse.json({ success: true });

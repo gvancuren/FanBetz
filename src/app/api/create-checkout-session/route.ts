@@ -1,8 +1,10 @@
 // src/app/api/create-checkout-session/route.ts
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getStripeInstance } from '@/lib/stripe'; // ✅ runtime-safe Stripe init
 
 interface CustomUser {
   id: number;
@@ -44,35 +46,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
-  // ✅ Initialize Stripe inside function (safe for Vercel)
-  const Stripe = require('stripe');
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-06-30.basil',
-  });
+  // ✅ Safe Stripe initialization
+  const stripe = getStripeInstance();
 
   try {
-    const sessionPayload = {
+    const sessionPayload: any = {
       mode: isSubscription ? 'subscription' : 'payment',
       payment_method_types: ['card'],
       line_items: isSubscription
-        ? [
-            {
-              price: priceId!,
-              quantity: 1,
-            },
-          ]
-        : [
-            {
-              price_data: {
-                currency: 'usd',
-                product_data: {
-                  name: `Unlock Post #${postId}`,
-                },
-                unit_amount: amount,
+        ? [{ price: priceId!, quantity: 1 }]
+        : [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Unlock Post #${postId}`,
               },
-              quantity: 1,
+              unit_amount: amount,
             },
-          ],
+            quantity: 1,
+          }],
       metadata: {
         creatorId: String(creatorId),
         userId: String(user.id),
@@ -81,7 +73,7 @@ export async function POST(req: Request) {
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?canceled=1`,
-    } as any;
+    };
 
     if (isSubscription) {
       sessionPayload.subscription_data = {

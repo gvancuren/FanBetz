@@ -5,10 +5,11 @@ export const config = {
   api: { bodyParser: false },
 };
 
+// ✅ Stripe safely required for Vercel compatibility
 function getStripeInstance() {
   const Stripe = require('stripe');
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-06-30.basil',
   });
 }
 
