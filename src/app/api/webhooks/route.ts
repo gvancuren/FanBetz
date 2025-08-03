@@ -1,8 +1,7 @@
-// src/app/api/webhooks/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// ✅ Use CommonJS require for Stripe to avoid Vercel build-time evaluation error
+// ✅ Use CommonJS require to prevent Vercel build-time evaluation
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export const config = {
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
 
   try {
     if (event.type === 'invoice.payment_succeeded') {
-      const invoice = event.data.object;
+      const invoice = event.data.object as Stripe.Invoice;
       const firstLine = invoice.lines?.data?.[0];
       const stripeSubId = typeof firstLine?.subscription === 'string' ? firstLine.subscription : '';
 
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
     }
 
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
+      const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata;
       if (!metadata) throw new Error('Missing metadata');
 
@@ -68,14 +67,14 @@ export async function POST(req: Request) {
       const subscriberId = parseInt(metadata.userId);
       const creatorId = parseInt(metadata.creatorId);
 
+      console.log(`📦 Checkout completed: plan=${plan}, subscriberId=${subscriberId}, creatorId=${creatorId}`);
+
       if (isNaN(subscriberId) || isNaN(creatorId)) {
-        throw new Error('Invalid subscriber or creator ID');
+        throw new Error(`Invalid subscriber (${subscriberId}) or creator (${creatorId}) ID`);
       }
 
       if (plan === 'weekly' || plan === 'monthly') {
-        const creator = await prisma.user.findUnique({
-          where: { id: creatorId },
-        });
+        const creator = await prisma.user.findUnique({ where: { id: creatorId } });
         if (!creator) throw new Error('Creator not found');
 
         const priceCents = plan === 'weekly' ? creator.weeklyPrice : creator.monthlyPrice;
@@ -99,27 +98,36 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`✅ Subscription saved for ${plan} plan`);
+        console.log(`✅ Subscription saved: ${plan} plan, user ${subscriberId}`);
       }
 
       if (plan === 'post') {
         const postId = parseInt(metadata.postId);
-        if (isNaN(postId)) throw new Error('Invalid post ID');
+        console.log(`🔓 Post unlock triggered: postId=${postId}, userId=${subscriberId}`);
 
-        await prisma.postUnlock.create({
-          data: {
-            userId: subscriberId,
-            postId,
-          },
-        });
+        if (isNaN(postId)) {
+          throw new Error(`Invalid post ID: ${metadata.postId}`);
+        }
 
-        console.log(`✅ Post unlock saved for post ID ${postId}`);
+        try {
+          const unlock = await prisma.postUnlock.create({
+            data: {
+              userId: subscriberId,
+              postId,
+            },
+          });
+
+          console.log(`✅ Post unlock saved:`, unlock);
+        } catch (err: any) {
+          console.error(`❌ Failed to save post unlock for post ${postId}, user ${subscriberId}:`, err.message);
+          return new Response(`Failed to save post unlock`, { status: 500 });
+        }
       }
     }
 
     return new Response('Webhook received', { status: 200 });
-  } catch (err) {
-    console.error('❌ Webhook handler failed:', err);
+  } catch (err: any) {
+    console.error('❌ Webhook handler failed:', err.message || err);
     return new Response('Webhook handler failed', { status: 500 });
   }
 }
