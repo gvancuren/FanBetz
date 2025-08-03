@@ -10,21 +10,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 });
 
-// Buffer helper
 async function buffer(readable: ReadableStream<Uint8Array>) {
   const reader = readable.getReader();
-  const chunks = [];
+  const chunks: Uint8Array[] = [];
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    chunks.push(value);
+    if (value) chunks.push(value);
   }
 
   return Buffer.concat(chunks);
 }
 
-// Main webhook handler
 export async function POST(req: NextRequest) {
   const rawBody = await buffer(req.body as any);
   const sig = req.headers.get('stripe-signature')!;
@@ -38,6 +36,16 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('❌ Webhook signature verification failed:', err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+  }
+
+  // 🔍 Test DB call to isolate Prisma connection issue
+  try {
+    console.log('🚦 Testing Prisma connection...');
+    const test = await prisma.user.findFirst(); // any harmless query
+    console.log('🧠 Prisma connected successfully');
+  } catch (err: any) {
+    console.error('❌ Prisma DB connection failed:', err.message);
+    return new NextResponse('Database connection error', { status: 500 });
   }
 
   try {
