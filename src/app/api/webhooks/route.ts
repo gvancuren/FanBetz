@@ -1,15 +1,15 @@
 // src/app/api/webhooks/route.ts
-
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+// ✅ Use CommonJS require for Stripe to avoid Vercel build-time evaluation error
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-// ✅ Use CommonJS-style require to avoid Vercel edge build errors
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature') as string;
@@ -28,7 +28,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ✅ Handle subscription renewal
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object;
       const firstLine = invoice.lines?.data?.[0];
@@ -60,7 +59,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Handle successful checkout
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const metadata = session.metadata;
