@@ -1,4 +1,4 @@
-// /app/api/stripe/connect/route.ts
+// ✅ File: /app/api/stripe/connect/route.ts
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -23,7 +23,6 @@ export async function POST() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  // ✅ Initialize Stripe with secret key and correct API version
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-06-30.basil',
   });
@@ -44,7 +43,11 @@ export async function POST() {
     });
   }
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const origin = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!origin || !origin.startsWith('https://')) {
+    console.error('❌ Invalid NEXT_PUBLIC_SITE_URL:', origin);
+    return NextResponse.json({ error: 'Invalid site URL' }, { status: 500 });
+  }
 
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
@@ -53,5 +56,6 @@ export async function POST() {
     type: 'account_onboarding',
   });
 
+  console.log('✅ Redirecting to Stripe onboarding:', accountLink.url);
   return NextResponse.json({ url: accountLink.url });
 }
