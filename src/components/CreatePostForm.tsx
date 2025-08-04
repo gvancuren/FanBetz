@@ -75,6 +75,7 @@ export default function CreatePostForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Title */}
       <div>
         <label className="block mb-2 text-gray-300 font-semibold">Title</label>
         <input
@@ -86,6 +87,7 @@ export default function CreatePostForm() {
         />
       </div>
 
+      {/* Content */}
       <div>
         <label className="block mb-2 text-gray-300 font-semibold">Content</label>
         <textarea
@@ -96,6 +98,7 @@ export default function CreatePostForm() {
         />
       </div>
 
+      {/* Price */}
       <div>
         <label className="block mb-2 text-gray-300 font-semibold">Price ($)</label>
         <input
@@ -107,6 +110,7 @@ export default function CreatePostForm() {
         />
       </div>
 
+      {/* Upload Image */}
       <div>
         <label className="block mb-2 text-gray-300 font-semibold">Upload Image</label>
         <input
@@ -119,12 +123,13 @@ export default function CreatePostForm() {
         {imageUrl && (
           <img
             src={imageUrl}
-            alt="Uploaded preview"
-            className="mt-4 rounded-lg w-full max-h-60 object-cover"
+            alt="Preview"
+            className="mt-4 w-full max-h-72 object-cover rounded-lg border border-zinc-600"
           />
         )}
       </div>
 
+      {/* Category */}
       <div>
         <label className="block mb-2 text-gray-300 font-semibold">Category</label>
         <select
@@ -140,6 +145,7 @@ export default function CreatePostForm() {
         </select>
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}
