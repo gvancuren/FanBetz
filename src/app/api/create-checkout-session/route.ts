@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       const unlock = await prisma.postUnlock.create({
         data: {
           userId: user.id,
-          postId,
+          postId: Number(postId), // ✅ Ensure proper integer type
         },
       });
 
