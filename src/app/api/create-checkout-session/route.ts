@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { creatorId, type, postId, amount } = body;
+  const { creatorId, type, postId, amount: rawAmount } = body;
+  const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount;
 
   if (!creatorId || !type || (type === 'post' && (!postId || amount == null))) {
     console.error('❌ Missing required parameters');
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
               product_data: {
                 name: `Unlock Post #${postId}`,
               },
-              unit_amount: Math.round(amount * 100), // Convert dollars to cents
+              unit_amount: Math.round(amount * 100), // ✅ safe conversion
             },
             quantity: 1,
           }],
@@ -84,7 +85,6 @@ export async function POST(req: Request) {
     };
 
     if (isSubscription) {
-      // Stripe handles fees differently for recurring — % fee taken from subscription
       sessionPayload.subscription_data = {
         application_fee_percent: 20,
         transfer_data: {
@@ -92,10 +92,8 @@ export async function POST(req: Request) {
         },
       };
     } else {
-      // One-time payment → Flat fee from total amount (in cents)
-      const feeAmount = Math.round(amount * 100 * 0.2); // 20% platform fee
       sessionPayload.payment_intent_data = {
-        application_fee_amount: feeAmount,
+        application_fee_amount: Math.round(amount * 100 * 0.2),
         transfer_data: {
           destination: creator.stripeAccountId,
         },
