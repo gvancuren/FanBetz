@@ -1,3 +1,4 @@
+// ✅ src/app/api/create-checkout-session/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
   const { creatorId, type, postId, amount: rawAmount } = body;
   const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount;
 
-  if (!creatorId || !type || (type === 'post' && (!postId || amount == null))) {
+  if (!creatorId || !type || (type === 'post' && !postId)) {
     console.error('❌ Missing required parameters');
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
@@ -56,12 +57,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
+  // ✅ Handle FREE or blank-priced post unlock immediately
+  if (type === 'post' && (!amount || amount === 0)) {
+    await prisma.postUnlock.create({
+      data: {
+        userId: user.id,
+        postId,
+      },
+    });
+
+    console.log('✅ Free or blank-price post unlocked directly in DB');
+    return NextResponse.json({
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?unlocked=1`,
+    });
+  }
+
   const stripe = getStripeInstance();
 
   // ✅ Fix the cent/dollar issue
-  const finalAmount = Math.round(Number(amount)) < 100 
-    ? Math.round(Number(amount) * 100) 
-    : Math.round(Number(amount)); // safe fallback
+  const finalAmount = Math.round(Number(amount)) < 100
+    ? Math.round(Number(amount) * 100)
+    : Math.round(Number(amount));
 
   try {
     const sessionPayload: any = {
