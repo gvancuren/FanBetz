@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       : rawAmount;
 
   console.log('💵 Parsed amount:', amount);
+  console.log('🧠 Checking if this should unlock immediately:', { type, amount, postId });
 
   if (!creatorId || !type || (type === 'post' && !postId)) {
     console.error('❌ Missing required parameters');
@@ -67,10 +68,12 @@ export async function POST(req: Request) {
   // ✅ Handle FREE or blank-priced post unlock immediately
   if (type === 'post' && amount === 0) {
     try {
+      console.log('🔓 Attempting free post unlock for:', { userId: user.id, postId });
+
       const unlock = await prisma.postUnlock.create({
         data: {
           userId: user.id,
-          postId: Number(postId), // ✅ Ensure proper integer type
+          postId: Number(postId),
         },
       });
 
@@ -78,9 +81,12 @@ export async function POST(req: Request) {
       return NextResponse.json({
         url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?unlocked=1`,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Failed to unlock free post:', err);
-      return NextResponse.json({ error: 'Failed to unlock free post' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Failed to unlock free post',
+        debug: err.message ?? JSON.stringify(err),
+      }, { status: 500 });
     }
   }
 
