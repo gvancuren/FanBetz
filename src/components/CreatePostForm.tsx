@@ -72,7 +72,7 @@ export default function CreatePostForm() {
           type="number"
           value={price ?? ''}
           onChange={(e) => setPrice(parseInt(e.target.value))}
-          placeholder="Optional price (leave empty for free)"
+          placeholder="Optional price (Enter 0 if Free)"
           className="w-full bg-zinc-800 text-white p-3 rounded-lg border border-zinc-700 focus:ring-yellow-500"
         />
       </div>

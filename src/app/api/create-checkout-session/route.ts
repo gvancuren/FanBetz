@@ -1,3 +1,4 @@
+// ✅ src/app/api/create-checkout-session/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -32,7 +33,14 @@ export async function POST(req: Request) {
   }
 
   const { creatorId, type, postId, amount: rawAmount } = body;
-  const amount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount;
+
+  const amount = !rawAmount || isNaN(Number(rawAmount))
+    ? 0
+    : typeof rawAmount === 'string'
+      ? parseFloat(rawAmount)
+      : rawAmount;
+
+  console.log('💵 Parsed amount:', amount);
 
   if (!creatorId || !type || (type === 'post' && !postId)) {
     console.error('❌ Missing required parameters');
@@ -57,12 +65,12 @@ export async function POST(req: Request) {
   }
 
   // ✅ Handle FREE or blank-priced post unlock immediately
-  if (type === 'post' && (!rawAmount || Number(amount) === 0)) {
+  if (type === 'post' && amount === 0) {
     try {
       const unlock = await prisma.postUnlock.create({
         data: {
           userId: user.id,
-          postId: Number(postId), // ✅ Coerce to number to avoid Prisma error
+          postId,
         },
       });
 
