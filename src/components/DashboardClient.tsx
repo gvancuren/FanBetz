@@ -8,14 +8,17 @@ export default function DashboardClient({ user }: { user: any }) {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/stripe-onboard', { method: 'POST' });
+      const res = await fetch('/api/stripe-onboarding', { method: 'POST' });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        alert('No onboarding URL received.');
+        console.error('Missing Stripe onboarding URL:', data);
       }
     } catch (err) {
       alert('Something went wrong. Please try again.');
-      console.error(err);
+      console.error('Stripe connect error:', err);
     } finally {
       setLoading(false);
     }
