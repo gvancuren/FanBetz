@@ -5,11 +5,10 @@ export const config = {
   api: { bodyParser: false },
 };
 
-// ✅ Stripe safely required for Vercel compatibility
 function getStripeInstance() {
   const Stripe = require('stripe');
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-06-30.basil',
+    apiVersion: '2023-10-16',
   });
 }
 
@@ -27,8 +26,18 @@ async function buffer(readable: ReadableStream<Uint8Array>) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('🔔 Webhook endpoint hit');
+
   const stripe = getStripeInstance();
-  const rawBody = await buffer(req.body as any);
+  let rawBody: Buffer;
+
+  try {
+    rawBody = await buffer(req.body as any);
+  } catch (err) {
+    console.error('❌ Failed to read raw body:', err);
+    return new NextResponse('Bad Request', { status: 400 });
+  }
+
   const sig = req.headers.get('stripe-signature')!;
   let event;
 
@@ -38,7 +47,7 @@ export async function POST(req: NextRequest) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-    console.log('📩 Stripe webhook received:', event.type);
+    console.log('✅ Stripe event:', event.type);
   } catch (err: any) {
     console.error('❌ Signature verification failed:', err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
@@ -75,7 +84,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        console.log(`✅ Subscription created: ${plan} for user ${subscriberId}`, result);
+        console.log(`✅ Subscription created for user ${subscriberId}:`, result);
       }
 
       if (plan === 'post') {
@@ -84,7 +93,7 @@ export async function POST(req: NextRequest) {
           data: { userId: subscriberId, postId },
         });
 
-        console.log(`🔓 Post unlocked: user ${subscriberId}, post ${postId}`, result);
+        console.log(`🔓 Post unlocked for user ${subscriberId}, post ${postId}`, result);
       }
     }
 
@@ -112,7 +121,7 @@ export async function POST(req: NextRequest) {
           data: { expiresAt: newExpiresAt },
         });
 
-        console.log(`🔁 Subscription renewed: ${sub.plan} now expires ${newExpiresAt}`);
+        console.log(`🔁 Subscription renewed for ${sub.plan}, new expiry: ${newExpiresAt}`);
       } else {
         console.warn(`⚠️ Subscription not found for Stripe ID ${stripeSubId}`);
       }
