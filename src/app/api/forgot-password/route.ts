@@ -25,11 +25,12 @@ export async function POST(req: NextRequest) {
     const token = randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
-    await prisma.user.update({
-      where: { id: user.id },
+    // ✅ Store the token in the PasswordResetToken model
+    await prisma.passwordResetToken.create({
       data: {
-        resetToken: token,
-        resetTokenExpiry: expires,
+        token,
+        userId: user.id,
+        expiresAt: expires,
       },
     });
 
