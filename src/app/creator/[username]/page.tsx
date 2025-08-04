@@ -226,23 +226,23 @@ export default async function Page({ params }: { params: Promise<{ username: str
                       <CommentForm postId={post.id} />
                     </>
                   ) : (
-                    <div className="relative rounded-lg overflow-hidden">
-                      {post.imageUrl && (
-                        <img
-                          src={post.imageUrl}
-                          alt="Locked Post"
-                          className="w-full object-cover max-h-[400px] filter blur-xl opacity-30"
-                        />
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-center px-4">
-                        <div>
-                          <p className="text-white font-semibold text-lg mb-3">🔒 Unlock this post to view full content</p>
-                          <UnlockPostButton
-                            postId={post.id.toString()}
-                            creatorId={user.id.toString()}
-                            amount={post.price ?? 0}
+                    <div className="relative overflow-hidden rounded-lg">
+                      <div className="blur-sm pointer-events-none select-none">
+                        {post.imageUrl && (
+                          <img
+                            src={post.imageUrl}
+                            alt="Post Image"
+                            className="w-full object-cover max-h-[400px]"
                           />
-                        </div>
+                        )}
+                        <p className="text-gray-400 mt-2 whitespace-pre-wrap">{post.content}</p>
+                      </div>
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                        <UnlockPostButton
+                          postId={post.id.toString()}
+                          creatorId={user.id.toString()}
+                          amount={post.price ?? 0}
+                        />
                       </div>
                     </div>
                   )}
