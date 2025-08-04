@@ -20,7 +20,6 @@ export async function POST() {
 
     let stripeAccountId = dbUser?.stripeAccountId;
 
-    // Force a new Stripe account if it's missing or broken (like from test mode)
     if (!stripeAccountId || stripeAccountId.startsWith('acct_1Rr')) {
       const account = await stripe.accounts.create({
         type: 'standard',
@@ -42,7 +41,8 @@ export async function POST() {
       type: 'account_onboarding',
     });
 
-    return NextResponse.json({ url: accountLink.url });
+    console.log('✅ Redirecting to Stripe onboarding:', accountLink.url);
+    return NextResponse.redirect(accountLink.url, 303); // 🔁 Auto-redirect instead of JSON response
   } catch (err: any) {
     console.error('❌ Stripe onboarding error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
