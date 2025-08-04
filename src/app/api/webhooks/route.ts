@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export const config = {
-  api: { bodyParser: false },
+  api: { bodyParser: false }, // Required for raw body parsing
 };
 
 export const dynamic = 'force-dynamic';
@@ -23,20 +23,18 @@ async function buffer(readable: ReadableStream<Uint8Array>) {
 export async function POST(req: NextRequest) {
   console.log('🔔 Webhook endpoint hit');
 
-  const Stripe = require('stripe');
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!stripeSecretKey) {
-    console.error('❌ STRIPE_SECRET_KEY is not defined in environment variables.');
-    return new NextResponse('Server misconfigured: missing Stripe key', { status: 500 });
+  if (!stripeSecretKey || !stripeWebhookSecret) {
+    console.error('❌ Missing Stripe keys in environment variables');
+    return new NextResponse('Server misconfigured', { status: 500 });
   }
 
-  const stripe = new Stripe(stripeSecretKey, {
-    apiVersion: '2023-10-16',
-  });
+  const Stripe = require('stripe');
+  const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
 
   let rawBody: Buffer;
-
   try {
     rawBody = await buffer(req.body as any);
   } catch (err) {
@@ -44,16 +42,16 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Bad Request', { status: 400 });
   }
 
-  const sig = req.headers.get('stripe-signature')!;
-  let event;
+  const sig = req.headers.get('stripe-signature');
+  if (!sig) {
+    console.error('❌ Missing Stripe signature header');
+    return new NextResponse('Missing signature', { status: 400 });
+  }
 
+  let event;
   try {
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-    console.log('✅ Stripe event:', event.type);
+    event = stripe.webhooks.constructEvent(rawBody, sig, stripeWebhookSecret);
+    console.log('✅ Stripe event received:', event.type);
   } catch (err: any) {
     console.error('❌ Signature verification failed:', err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
