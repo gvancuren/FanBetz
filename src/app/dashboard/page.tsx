@@ -55,7 +55,6 @@ export default async function DashboardPage() {
           >
             + New Post
           </Link>
-          <StripeConnectButton />
         </div>
       </div>
       <DashboardClient user={user} />

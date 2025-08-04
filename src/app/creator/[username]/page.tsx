@@ -34,9 +34,8 @@ async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean>
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = await params;
-  const decodedUsername = decodeURIComponent(username).trim();
+export default async function Page({ params }: { params: { username: string } }) {
+  const decodedUsername = decodeURIComponent(params.username).trim();
 
   const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ? Number(session.user.id) : null;
@@ -148,9 +147,9 @@ export default async function Page({ params }: { params: Promise<{ username: str
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
               <div className="text-center">
-                <StripeConnectButton />
+                {/* StripeConnectButton removed */}
                 <p className="text-red-400 mt-2 text-sm">
-                  Your Stripe account is not fully connected. Click above to finish setup.
+                  Your Stripe account is not fully connected. Go to your dashboard to finish setup.
                 </p>
               </div>
             ) : (
