@@ -30,9 +30,10 @@ export default function SignInPage() {
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-zinc-900 p-8 rounded-xl max-w-md w-full shadow-xl"
+        className="bg-zinc-900 p-8 rounded-xl max-w-md w-full shadow-xl border border-yellow-500"
       >
-        <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400">Sign In</h1>
+        <h1 className="text-3xl font-bold mb-2 text-center text-yellow-400">Sign In to FanBetz</h1>
+        <h2 className="text-center text-red-500 mb-4">TESTING DEPLOY</h2>
 
         <input
           type="email"
@@ -60,6 +61,28 @@ export default function SignInPage() {
         </button>
 
         {error && <p className="text-red-500 mt-4 text-sm text-center">{error}</p>}
+
+        {/* Recovery Options */}
+        <div className="text-sm mt-4 text-center space-y-2">
+          <p>
+            <a href="/forgot-password" className="text-yellow-400 hover:underline">
+              Forgot your password?
+            </a>
+          </p>
+          <p>
+            <a href="/forgot-username" className="text-yellow-400 hover:underline">
+              Forgot your username?
+            </a>
+          </p>
+        </div>
+
+        {/* Sign Up Prompt */}
+        <div className="text-sm text-center text-gray-400 mt-6">
+          Don’t have an account?{' '}
+          <a href="/signup" className="text-yellow-400 hover:underline">
+            Sign up here
+          </a>
+        </div>
       </form>
     </div>
   );
