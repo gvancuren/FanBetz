@@ -3,49 +3,33 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
-
-interface CustomUser {
-  id: number;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
 
 export async function likePost(postId: number, userId: number) {
   const session = await getServerSession(authOptions);
-  const typedUser = session?.user as CustomUser | undefined;
 
-  if (!typedUser?.id || typedUser.id !== userId) {
-    console.error('❌ Unauthorized like attempt');
+  if (!session?.user?.id) {
+    console.error('❌ No session, cannot like post');
     return;
   }
 
-  const existingLike = await prisma.postLike.findFirst({
-    where: {
-      userId: typedUser.id,
-      postId,
-    },
-  });
-
-  if (existingLike) {
-    await prisma.postLike.delete({
-      where: { id: existingLike.id },
-    });
-    console.log(`❌ Unliked post ${postId}`);
-  } else {
-    await prisma.postLike.create({
-      data: {
-        userId: typedUser.id,
-        postId,
-      },
-    });
-    console.log(`✅ Liked post ${postId}`);
+  if (Number(session.user.id) !== userId) {
+    console.error(`❌ Session user (${session.user.id}) doesn't match userId param (${userId})`);
+    return;
   }
 
-  if (typedUser.name) {
-    revalidatePath(`/creator/${typedUser.name}`);
-  } else {
-    console.warn('⚠ Cannot revalidate: username missing');
+  try {
+    await prisma.postLike.create({
+      data: {
+        postId,
+        userId,
+      },
+    });
+    console.log(`✅ Post ${postId} liked by user ${userId}`);
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      console.warn('⚠️ Post already liked by this user (duplicate like)');
+    } else {
+      console.error('❌ Error creating post like:', err);
+    }
   }
 }

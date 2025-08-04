@@ -20,9 +20,14 @@ export default function LikeButton({ postId, userId, hasLiked, likeCount }: Like
     if (isPending) return;
 
     startTransition(async () => {
-      await likePost(postId, userId);
-      setLiked((prev) => !prev);
-      setLikes((prev) => (liked ? prev - 1 : prev + 1));
+      try {
+        await likePost(postId, userId);
+        setLiked((prev) => !prev);
+        setLikes((prev) => (liked ? prev - 1 : prev + 1));
+        console.log(`👍 Post ${postId} ${liked ? 'unliked' : 'liked'} by user ${userId}`);
+      } catch (err) {
+        console.error('❌ Failed to toggle like:', err);
+      }
     });
   };
 
