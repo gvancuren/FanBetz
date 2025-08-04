@@ -10,15 +10,23 @@ export default function DashboardClient({ user }: { user: any }) {
     try {
       const res = await fetch('/api/stripe-onboarding', { method: 'POST' });
       const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Stripe onboarding failed:', data);
+        alert(`Stripe error: ${data.error || 'Unknown error'}`);
+        return;
+      }
+
       if (data.url) {
+        console.log('🔁 Redirecting to Stripe onboarding:', data.url);
         window.location.href = data.url;
       } else {
         alert('No onboarding URL received.');
         console.error('Missing Stripe onboarding URL:', data);
       }
     } catch (err) {
-      alert('Something went wrong. Please try again.');
       console.error('Stripe connect error:', err);
+      alert('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
