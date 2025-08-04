@@ -1,10 +1,8 @@
-// src/app/api/create-checkout-session/route.ts
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getStripeInstance } from '@/lib/stripe'; // ✅ runtime-safe Stripe init
+import { getStripeInstance } from '@/lib/stripe';
 
 interface CustomUser {
   id: number;
@@ -14,6 +12,8 @@ interface CustomUser {
 }
 
 export async function POST(req: Request) {
+  console.log('📩 Incoming checkout session request...');
+
   const session = await getServerSession(authOptions);
   const user = session?.user as CustomUser | undefined;
 
@@ -22,9 +22,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { creatorId, type, postId, amount } = await req.json();
+  let body;
+  try {
+    body = await req.json();
+    console.log('📦 Request body:', body);
+  } catch (err) {
+    console.error('❌ Invalid JSON:', err);
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
-  if (!creatorId || !type || (type === 'post' && (!postId || !amount))) {
+  const { creatorId, type, postId, amount } = body;
+
+  if (!creatorId || !type || (type === 'post' && (!postId || amount == null))) {
     console.error('❌ Missing required parameters');
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
@@ -46,7 +55,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
-  // ✅ Safe Stripe initialization
   const stripe = getStripeInstance();
 
   try {
@@ -61,7 +69,7 @@ export async function POST(req: Request) {
               product_data: {
                 name: `Unlock Post #${postId}`,
               },
-              unit_amount: amount,
+              unit_amount: Math.round(amount * 100), // Convert dollars to cents
             },
             quantity: 1,
           }],
@@ -76,6 +84,7 @@ export async function POST(req: Request) {
     };
 
     if (isSubscription) {
+      // Stripe handles fees differently for recurring — % fee taken from subscription
       sessionPayload.subscription_data = {
         application_fee_percent: 20,
         transfer_data: {
@@ -83,8 +92,10 @@ export async function POST(req: Request) {
         },
       };
     } else {
+      // One-time payment → Flat fee from total amount (in cents)
+      const feeAmount = Math.round(amount * 100 * 0.2); // 20% platform fee
       sessionPayload.payment_intent_data = {
-        application_fee_amount: Math.round(amount * 0.2),
+        application_fee_amount: feeAmount,
         transfer_data: {
           destination: creator.stripeAccountId,
         },
@@ -96,7 +107,7 @@ export async function POST(req: Request) {
     console.log(`✅ Stripe checkout session created: ${checkoutSession.id}`);
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
-    console.error('❌ Stripe session creation failed:', error.message || error);
+    console.error('❌ Stripe session creation failed:', error);
     return NextResponse.json({ error: 'Unable to create checkout session' }, { status: 500 });
   }
 }

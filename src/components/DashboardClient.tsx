@@ -1,10 +1,45 @@
-// ✅ src/components/DashboardClient.tsx
 'use client';
 
+import { useState } from 'react';
+
 export default function DashboardClient({ user }: { user: any }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleConnect = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/stripe-onboard', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 text-white space-y-12">
       <h1 className="text-3xl font-bold mb-6">📊 My Dashboard</h1>
+
+      {/* Stripe Connect Banner */}
+      {!user.stripeAccountId && (
+        <div className="bg-yellow-500 text-black p-4 rounded-lg space-y-2 shadow-md">
+          <p className="font-semibold">
+            ⚠️ You haven’t connected your Stripe account yet. You won’t be able to earn payouts until you do.
+          </p>
+          <button
+            onClick={handleConnect}
+            disabled={loading}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
+          >
+            {loading ? 'Redirecting...' : 'Connect with Stripe'}
+          </button>
+        </div>
+      )}
 
       {/* STATS */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
