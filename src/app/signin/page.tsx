@@ -22,7 +22,7 @@ export default function SignInPage() {
     if (res?.error) {
       setError('Invalid credentials');
     } else {
-      router.push('/dashboard'); // TODO: Replace with actual user profile redirect
+      router.push('/dashboard'); // Redirect to profile/dashboard
     }
   };
 
@@ -32,8 +32,7 @@ export default function SignInPage() {
         onSubmit={handleSubmit}
         className="bg-zinc-900 p-8 rounded-xl max-w-md w-full shadow-xl border border-yellow-500"
       >
-        <h1 className="text-3xl font-bold mb-2 text-center text-yellow-400">Sign In to FanBetz</h1>
-        <h2 className="text-center text-red-500 mb-4">TESTING DEPLOY</h2>
+        <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400">Sign In to FanBetz</h1>
 
         <input
           type="email"
@@ -62,18 +61,11 @@ export default function SignInPage() {
 
         {error && <p className="text-red-500 mt-4 text-sm text-center">{error}</p>}
 
-        {/* Recovery Options */}
-        <div className="text-sm mt-4 text-center space-y-2">
-          <p>
-            <a href="/forgot-password" className="text-yellow-400 hover:underline">
-              Forgot your password?
-            </a>
-          </p>
-          <p>
-            <a href="/forgot-username" className="text-yellow-400 hover:underline">
-              Forgot your username?
-            </a>
-          </p>
+        {/* Forgot Password Link */}
+        <div className="text-sm mt-4 text-center">
+          <a href="/forgot-password" className="text-yellow-400 hover:underline">
+            Forgot your password?
+          </a>
         </div>
 
         {/* Sign Up Prompt */}
@@ -87,3 +79,4 @@ export default function SignInPage() {
     </div>
   );
 }
+
