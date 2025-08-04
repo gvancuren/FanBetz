@@ -77,6 +77,8 @@ model PostUnlock {
   postId Int
   post   Post @relation(fields: [postId], references: [id])
   user   User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, postId])
 }
 
 model Subscription {
@@ -113,6 +115,7 @@ model PostLike {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, postId])
+  @@map("PostLike")
 }
 
 enum Category {
