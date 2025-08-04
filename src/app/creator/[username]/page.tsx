@@ -226,18 +226,9 @@ export default async function Page({ params }: { params: Promise<{ username: str
                       <CommentForm postId={post.id} />
                     </>
                   ) : (
-                    <div className="relative overflow-hidden rounded-lg">
-                      <div className="blur-sm pointer-events-none select-none">
-                        {post.imageUrl && (
-                          <img
-                            src={post.imageUrl}
-                            alt="Post Image"
-                            className="w-full object-cover max-h-[400px]"
-                          />
-                        )}
-                        <p className="text-gray-400 mt-2 whitespace-pre-wrap">{post.content}</p>
-                      </div>
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div className="relative rounded-lg overflow-hidden">
+                      <div className="bg-black bg-opacity-70 p-4 rounded-lg">
+                        <p className="text-gray-400 italic mb-3">🔒 This post is locked. Unlock to see the content.</p>
                         <UnlockPostButton
                           postId={post.id.toString()}
                           creatorId={user.id.toString()}
