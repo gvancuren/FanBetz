@@ -15,7 +15,7 @@ export default function SignInPage() {
 
     const res = await signIn('credentials', {
       redirect: true,
-      callbackUrl: '/dashboard', // ✅ triggers NextAuth redirect logic
+      callbackUrl: '/dashboard',
       email,
       password,
     });
@@ -59,7 +59,22 @@ export default function SignInPage() {
           </button>
         </form>
 
-        <div className="text-sm text-center text-gray-400 mt-4">
+        {/* Recovery Options */}
+        <div className="text-sm mt-4 text-center space-y-2">
+          <p>
+            <a href="/forgot-password" className="text-yellow-400 hover:underline">
+              Forgot your password?
+            </a>
+          </p>
+          <p>
+            <a href="/forgot-username" className="text-yellow-400 hover:underline">
+              Forgot your username?
+            </a>
+          </p>
+        </div>
+
+        {/* Sign Up Prompt */}
+        <div className="text-sm text-center text-gray-400 mt-6">
           Don’t have an account?{' '}
           <a href="/signup" className="text-yellow-400 hover:underline">
             Sign up here
