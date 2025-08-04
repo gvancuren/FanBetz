@@ -58,6 +58,11 @@ export async function POST(req: Request) {
 
   const stripe = getStripeInstance();
 
+  // ✅ Fix the cent/dollar issue
+  const finalAmount = Math.round(Number(amount)) < 100 
+    ? Math.round(Number(amount) * 100) 
+    : Math.round(Number(amount)); // safe fallback
+
   try {
     const sessionPayload: any = {
       mode: isSubscription ? 'subscription' : 'payment',
@@ -70,7 +75,7 @@ export async function POST(req: Request) {
               product_data: {
                 name: `Unlock Post #${postId}`,
               },
-              unit_amount: Math.round(amount * 100), // ✅ safe conversion
+              unit_amount: finalAmount,
             },
             quantity: 1,
           }],
@@ -93,7 +98,7 @@ export async function POST(req: Request) {
       };
     } else {
       sessionPayload.payment_intent_data = {
-        application_fee_amount: Math.round(amount * 100 * 0.2),
+        application_fee_amount: Math.round(finalAmount * 0.2),
         transfer_data: {
           destination: creator.stripeAccountId,
         },
