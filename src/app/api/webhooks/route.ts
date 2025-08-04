@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import Stripe from 'stripe';
 
 export const config = {
   api: { bodyParser: false },
 };
 
 function getStripeInstance() {
-  const Stripe = require('stripe');
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  console.log('🔑 STRIPE_SECRET_KEY loaded:', secretKey);
+  if (!secretKey) {
+    throw new Error('❌ STRIPE_SECRET_KEY is undefined at runtime.');
+  }
+
+  return new Stripe(secretKey, {
     apiVersion: '2023-10-16',
   });
 }
@@ -27,6 +33,7 @@ async function buffer(readable: ReadableStream<Uint8Array>) {
 
 export async function POST(req: NextRequest) {
   console.log('🔔 Webhook endpoint hit');
+  console.log('🔎 Loaded STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY); // 🔍 Confirm loading
 
   const stripe = getStripeInstance();
   let rawBody: Buffer;
