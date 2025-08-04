@@ -13,7 +13,6 @@ import CommentList from '@/components/CommentList';
 import LikeButton from '@/components/LikeButton';
 import FollowButton from '@/components/FollowButton';
 import Link from 'next/link';
-import StripeConnectButton from '@/components/StripeConnectButton';
 import OwnerProfilePicture from '@/components/OwnerProfilePicture';
 import { updateBio } from '@/app/actions/updateBio';
 import Stripe from 'stripe';

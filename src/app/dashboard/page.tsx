@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import DashboardClient from '@/components/DashboardClient';
-import StripeConnectButton from '@/components/StripeConnectButton';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
