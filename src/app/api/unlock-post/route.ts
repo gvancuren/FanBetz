@@ -12,24 +12,46 @@ export async function POST(req: Request) {
 
   const { postId, amount } = await req.json();
   const userId = Number(session.user.id);
-  const numericPostId = Number(postId); // ✅ Ensure postId is an integer
+  const numericPostId = Number(postId); // Ensure integer
+
+  if (!numericPostId) {
+    return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 });
+  }
 
   const post = await prisma.post.findUnique({
     where: { id: numericPostId },
     include: { user: true },
   });
 
-  if (!post || !post.user.stripeAccountId) {
+  if (!post || !post.user?.stripeAccountId) {
     return NextResponse.json({ error: 'Post or creator not found' }, { status: 404 });
   }
 
-  // ✅ Move require inside route to avoid build failure
+  // ✅ Handle free post unlock (skip Stripe)
+  if (!amount || Number(amount) === 0) {
+    try {
+      const unlock = await prisma.postUnlock.create({
+        data: {
+          userId,
+          postId: numericPostId,
+        },
+      });
+
+      console.log('✅ Free post unlocked directly:', unlock);
+      return NextResponse.json({ unlocked: true });
+    } catch (err) {
+      console.error('❌ Failed to unlock free post:', err);
+      return NextResponse.json({ error: 'Failed to unlock free post' }, { status: 500 });
+    }
+  }
+
+  // ✅ Stripe logic for paid unlocks
   const Stripe = require('stripe');
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-06-30.basil',
   });
 
-  const platformFee = Math.floor(amount * 0.2); // 20% platform cut
+  const platformFee = Math.floor(Number(amount) * 0.2); // 20% cut
 
   try {
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -43,7 +65,7 @@ export async function POST(req: Request) {
             product_data: {
               name: `Unlock Post: ${post.title}`,
             },
-            unit_amount: amount,
+            unit_amount: Math.round(Number(amount)),
           },
           quantity: 1,
         },
