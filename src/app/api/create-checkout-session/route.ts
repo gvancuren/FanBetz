@@ -1,4 +1,3 @@
-// ✅ src/app/api/create-checkout-session/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -63,7 +62,7 @@ export async function POST(req: Request) {
       const unlock = await prisma.postUnlock.create({
         data: {
           userId: user.id,
-          postId,
+          postId: Number(postId), // ✅ Coerce to number to avoid Prisma error
         },
       });
 
