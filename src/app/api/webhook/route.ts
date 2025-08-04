@@ -41,11 +41,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Webhook Error' }, { status: 400 });
   }
 
-  // ✅ Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-
     const metadata = session.metadata;
+
     const userId = parseInt(metadata?.userId || '');
     const postId = parseInt(metadata?.postId || '');
     const creatorId = parseInt(metadata?.creatorId || '');
@@ -53,30 +52,36 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Webhook received:', { userId, postId, creatorId, type });
 
-    if (type === 'post') {
-      await prisma.unlock.create({
-        data: {
-          userId,
-          postId,
-        },
-      });
-      console.log('✅ Post unlocked');
-    } else if (type === 'subscription') {
-      const duration = metadata?.duration; // 'weekly' or 'monthly'
-      const now = new Date();
-      const expiresAt =
-        duration === 'monthly'
-          ? new Date(now.setMonth(now.getMonth() + 1))
-          : new Date(now.setDate(now.getDate() + 7));
+    try {
+      if (type === 'post') {
+        await prisma.postUnlock.create({
+          data: {
+            userId,
+            postId,
+          },
+        });
+        console.log('✅ Post unlocked');
+      } else if (type === 'weekly' || type === 'monthly') {
+        const now = new Date();
+        const expiresAt =
+          type === 'monthly'
+            ? new Date(now.setMonth(now.getMonth() + 1))
+            : new Date(now.setDate(now.getDate() + 7));
 
-      await prisma.subscription.create({
-        data: {
-          userId,
-          creatorId,
-          expiresAt,
-        },
-      });
-      console.log('✅ Subscription created');
+        await prisma.subscription.create({
+          data: {
+            creatorId,
+            subscriberId: userId,
+            plan: type,
+            expiresAt,
+            price: 0, // optionally update with real price if needed
+          },
+        });
+        console.log('✅ Subscription created');
+      }
+    } catch (err) {
+      console.error('❌ Failed to handle webhook logic:', err);
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
   }
 
