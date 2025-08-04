@@ -1,65 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { buffer } from 'micro';
+import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
 export const config = {
-  api: { bodyParser: false }, // Required for raw body parsing
+  api: {
+    bodyParser: false,
+  },
 };
 
-export const dynamic = 'force-dynamic';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
 
-async function buffer(readable: ReadableStream<Uint8Array>) {
-  const reader = readable.getReader();
-  const chunks: Uint8Array[] = [];
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('🔔 Webhook endpoint hit (pages/api/webhooks.ts)');
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) chunks.push(value);
-  }
-
-  return Buffer.concat(chunks);
-}
-
-export async function POST(req: NextRequest) {
-  console.log('🔔 Webhook endpoint hit');
-
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!stripeSecretKey || !stripeWebhookSecret) {
-    console.error('❌ Missing Stripe keys in environment variables');
-    return new NextResponse('Server misconfigured', { status: 500 });
-  }
-
-  const Stripe = require('stripe');
-  const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
-
-  let rawBody: Buffer;
-  try {
-    rawBody = await buffer(req.body as any);
-  } catch (err) {
-    console.error('❌ Failed to read raw body:', err);
-    return new NextResponse('Bad Request', { status: 400 });
-  }
-
-  const sig = req.headers.get('stripe-signature');
-  if (!sig) {
-    console.error('❌ Missing Stripe signature header');
-    return new NextResponse('Missing signature', { status: 400 });
+  if (req.method !== 'POST') {
+    return res.status(405).end('Method Not Allowed');
   }
 
   let event;
+  const sig = req.headers['stripe-signature'] as string;
+
+  if (!sig) {
+    console.error('❌ Missing Stripe signature');
+    return res.status(400).send('Missing signature');
+  }
+
+  let rawBody: Buffer;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, stripeWebhookSecret);
-    console.log('✅ Stripe event received:', event.type);
+    rawBody = await buffer(req);
+    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    console.log(`✅ Verified event: ${event.type}`);
   } catch (err: any) {
     console.error('❌ Signature verification failed:', err.message);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
+      const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata;
 
       if (!metadata) throw new Error('Missing metadata');
@@ -88,7 +69,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        console.log(`✅ Subscription created for user ${subscriberId}:`, result);
+        console.log(`✅ Subscription created:`, result);
       }
 
       if (plan === 'post') {
@@ -102,12 +83,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (event.type === 'invoice.payment_succeeded') {
-      const invoice = event.data.object;
+      const invoice = event.data.object as Stripe.Invoice;
       const stripeSubId = invoice?.lines?.data?.[0]?.subscription;
 
       if (!stripeSubId) {
         console.warn('⚠️ No subscription ID found in invoice');
-        return new NextResponse('No subscription ID', { status: 400 });
+        return res.status(400).send('Missing subscription ID');
       }
 
       const sub = await prisma.subscription.findFirst({
@@ -125,15 +106,13 @@ export async function POST(req: NextRequest) {
           data: { expiresAt: newExpiresAt },
         });
 
-        console.log(`🔁 Subscription renewed for ${sub.plan}, new expiry: ${newExpiresAt}`);
-      } else {
-        console.warn(`⚠️ Subscription not found for Stripe ID ${stripeSubId}`);
+        console.log(`🔁 Subscription renewed, new expiry: ${newExpiresAt}`);
       }
     }
 
-    return new NextResponse('✅ Webhook handled', { status: 200 });
+    res.status(200).send('✅ Webhook handled');
   } catch (err: any) {
     console.error('❌ Webhook handler error:', err.message);
-    return new NextResponse('Webhook error', { status: 500 });
+    res.status(500).send('Webhook handler failed');
   }
 }
