@@ -12,9 +12,10 @@ export async function POST(req: Request) {
 
   const { postId, amount } = await req.json();
   const userId = Number(session.user.id);
+  const numericPostId = Number(postId); // ✅ Ensure postId is an integer
 
   const post = await prisma.post.findUnique({
-    where: { id: postId },
+    where: { id: numericPostId },
     include: { user: true },
   });
 
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
       },
       metadata: {
         type: 'post',
-        postId: postId.toString(),
+        postId: numericPostId.toString(),
         userId: userId.toString(),
         creatorId: post.userId.toString(),
       },
