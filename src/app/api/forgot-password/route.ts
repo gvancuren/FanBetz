@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { randomBytes } from 'crypto';
-import { sendEmail } from '@/lib/mailer'; // ✅ You’ll create this next
+import { sendEmail } from '@/lib/mailer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,17 +9,21 @@ export async function POST(req: NextRequest) {
     const email = body.email?.toLowerCase().trim();
 
     if (!email) {
+      console.warn('⚠️ No email provided in request body');
       return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
     }
+
+    console.log(`📩 Password reset requested for: ${email}`);
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return NextResponse.json({ success: true }); // Always return success to prevent user enumeration
+      console.log(`ℹ️ No user found with email: ${email} — responding with success to prevent enumeration`);
+      return NextResponse.json({ success: true });
     }
 
     const token = randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour from now
+    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
     await prisma.user.update({
       where: { id: user.id },
@@ -29,9 +33,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    console.log(`✅ Token generated and stored for user ${user.id}`);
+
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=${token}`;
 
-    await sendEmail({
+    const sendResult = await sendEmail({
       to: email,
       subject: 'Reset your FanBetz password',
       html: `
@@ -41,6 +47,8 @@ export async function POST(req: NextRequest) {
         <p>If you didn’t request this, you can safely ignore it.</p>
       `,
     });
+
+    console.log('📧 Email send result:', sendResult);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
