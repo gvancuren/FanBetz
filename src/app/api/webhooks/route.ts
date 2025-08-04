@@ -6,17 +6,15 @@ export const config = {
   api: { bodyParser: false },
 };
 
-function getStripeInstance() {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  console.log('🔑 STRIPE_SECRET_KEY loaded:', secretKey);
-  if (!secretKey) {
-    throw new Error('❌ STRIPE_SECRET_KEY is undefined at runtime.');
-  }
-
-  return new Stripe(secretKey, {
-    apiVersion: '2023-10-16',
-  });
+// ✅ Declare and validate at the top-level module scope
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  throw new Error('❌ STRIPE_SECRET_KEY is not defined in environment variables.');
 }
+
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2023-10-16',
+});
 
 async function buffer(readable: ReadableStream<Uint8Array>) {
   const reader = readable.getReader();
@@ -33,9 +31,7 @@ async function buffer(readable: ReadableStream<Uint8Array>) {
 
 export async function POST(req: NextRequest) {
   console.log('🔔 Webhook endpoint hit');
-  console.log('🔎 Loaded STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY); // 🔍 Confirm loading
 
-  const stripe = getStripeInstance();
   let rawBody: Buffer;
 
   try {
