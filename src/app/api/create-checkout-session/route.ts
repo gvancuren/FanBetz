@@ -58,23 +58,27 @@ export async function POST(req: Request) {
   }
 
   // ✅ Handle FREE or blank-priced post unlock immediately
-  if (type === 'post' && (!amount || amount === 0)) {
-    await prisma.postUnlock.create({
-      data: {
-        userId: user.id,
-        postId,
-      },
-    });
+  if (type === 'post' && (!rawAmount || Number(amount) === 0)) {
+    try {
+      const unlock = await prisma.postUnlock.create({
+        data: {
+          userId: user.id,
+          postId,
+        },
+      });
 
-    console.log('✅ Free or blank-price post unlocked directly in DB');
-    return NextResponse.json({
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?unlocked=1`,
-    });
+      console.log('✅ Free or blank-price post unlocked directly in DB:', unlock);
+      return NextResponse.json({
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?unlocked=1`,
+      });
+    } catch (err) {
+      console.error('❌ Failed to unlock free post:', err);
+      return NextResponse.json({ error: 'Failed to unlock free post' }, { status: 500 });
+    }
   }
 
   const stripe = getStripeInstance();
 
-  // ✅ Fix the cent/dollar issue
   const finalAmount = Math.round(Number(amount)) < 100
     ? Math.round(Number(amount) * 100)
     : Math.round(Number(amount));
@@ -122,8 +126,8 @@ export async function POST(req: Request) {
     }
 
     const checkoutSession = await stripe.checkout.sessions.create(sessionPayload);
-
     console.log(`✅ Stripe checkout session created: ${checkoutSession.id}`);
+
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
     console.error('❌ Stripe session creation failed:', error);
