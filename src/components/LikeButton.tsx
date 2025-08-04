@@ -21,18 +21,20 @@ export default function LikeButton({ postId, userId, hasLiked, likeCount }: Like
 
     startTransition(async () => {
       await likePost(postId, userId);
-      setLiked(true);
-      setLikes((prev) => prev + 1);
+      setLiked((prev) => !prev);
+      setLikes((prev) => (liked ? prev - 1 : prev + 1));
     });
   };
 
   return (
     <button
       onClick={handleClick}
-      disabled={liked || isPending}
-      className="flex items-center gap-1 text-pink-400 hover:text-pink-500 transition"
+      disabled={isPending}
+      className={`flex items-center gap-1 transition ${
+        liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'
+      }`}
     >
-      <Heart className="w-5 h-5" />
+      <Heart className="w-5 h-5" fill={liked ? '#ec4899' : 'none'} />
       <span>{likes}</span>
     </button>
   );

@@ -1,6 +1,6 @@
 export default function TermsOfServicePage() {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-12 text-black space-y-6">
+      <div className="max-w-4xl mx-auto px-6 py-12 text-yellow space-y-6">
         <h1 className="text-3xl font-bold text-yellow-400">Terms of Service</h1>
   
         <p>
