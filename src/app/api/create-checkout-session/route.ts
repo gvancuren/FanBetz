@@ -1,4 +1,3 @@
-// ✅ src/app/api/create-checkout-session/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -65,28 +64,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Creator has not set a subscription price yet' }, { status: 400 });
   }
 
-  // ✅ Handle FREE or blank-priced post unlock immediately
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+  if (!baseUrl || !baseUrl.startsWith('http')) {
+    console.error('❌ Invalid NEXT_PUBLIC_BASE_URL:', baseUrl);
+    return NextResponse.json({ error: 'Invalid BASE_URL' }, { status: 500 });
+  }
+
+  // ✅ Handle FREE unlocks immediately
   if (type === 'post' && amount === 0) {
     try {
-      console.log('🔓 Attempting free post unlock for:', { userId: user.id, postId });
-
+      console.log('🔓 Unlocking free post:', { userId: user.id, postId });
       const unlock = await prisma.postUnlock.create({
         data: {
           userId: user.id,
           postId: Number(postId),
         },
       });
-
-      console.log('✅ Free or blank-price post unlocked directly in DB:', unlock);
       return NextResponse.json({
-        url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?unlocked=1`,
+        url: `${baseUrl}/creator/${encodeURIComponent(creator.name!) ?? ''}?unlocked=1`,
       });
     } catch (err: any) {
       console.error('❌ Failed to unlock free post:', err);
-      return NextResponse.json({
-        error: 'Failed to unlock free post',
-        debug: err.message ?? JSON.stringify(err),
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to unlock free post' }, { status: 500 });
     }
   }
 
@@ -118,8 +118,8 @@ export async function POST(req: Request) {
         type,
         postId: postId ? String(postId) : '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/creator/${creator.name}?canceled=1`,
+      success_url: `${baseUrl}/subscribe-success?creatorId=${creatorId}&type=${type}&postId=${postId || ''}`,
+      cancel_url: `${baseUrl}/creator/${encodeURIComponent(creator.name!) ?? ''}?canceled=1`,
     };
 
     if (isSubscription) {
@@ -137,6 +137,9 @@ export async function POST(req: Request) {
         },
       };
     }
+
+    console.log('🌐 BASE URL:', baseUrl);
+    console.log('💸 Stripe destination:', creator.stripeAccountId);
 
     const checkoutSession = await stripe.checkout.sessions.create(sessionPayload);
     console.log(`✅ Stripe checkout session created: ${checkoutSession.id}`);
