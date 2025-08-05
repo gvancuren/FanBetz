@@ -1,5 +1,3 @@
-// ✅ File: /src/app/competition/page.tsx
-
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -15,12 +13,11 @@ export default async function CompetitionPage() {
 
   const topVolume = await prisma.user.findMany({
     where: { isCreator: true },
-    orderBy: { payoutTotal: 'desc' }, // ✅ Use valid field from Prisma schema
+    orderBy: { payoutTotal: 'desc' },
     take: 10,
     select: {
       id: true,
       name: true,
-      payoutTotal: true, // ✅ Must be selected to display
     },
   });
 
@@ -52,7 +49,7 @@ export default async function CompetitionPage() {
           <ol className="space-y-1">
             {topVolume.map((user, index) => (
               <li key={user.id}>
-                {index + 1}. <Link href={`/creator/${user.name}`} className="underline">{user.name}</Link> — ${user.payoutTotal?.toFixed(2) ?? '0.00'}
+                {index + 1}. <Link href={`/creator/${user.name}`} className="underline">{user.name}</Link>
               </li>
             ))}
           </ol>
@@ -63,7 +60,9 @@ export default async function CompetitionPage() {
         Want to compete? <Link href="/dashboard" className="text-yellow-400 underline">Start your profile today</Link>
       </p>
 
-      <p className="mt-6 text-sm text-gray-400 text-center">Competition ends March 31, 2026. Winners announced April 1st.</p>
+      <p className="mt-6 text-sm text-gray-400 text-center">
+        Competition ends March 31, 2026. Winners announced April 1st.
+      </p>
     </div>
   );
 }
