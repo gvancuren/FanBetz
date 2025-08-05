@@ -15,8 +15,13 @@ export default async function CompetitionPage() {
 
   const topVolume = await prisma.user.findMany({
     where: { isCreator: true },
-    orderBy: { totalRevenue: 'desc' }, // Make sure this field exists or replace it with calculated logic
+    orderBy: { payoutTotal: 'desc' }, // ✅ Use valid field from Prisma schema
     take: 10,
+    select: {
+      id: true,
+      name: true,
+      payoutTotal: true, // ✅ Must be selected to display
+    },
   });
 
   return (
@@ -47,7 +52,7 @@ export default async function CompetitionPage() {
           <ol className="space-y-1">
             {topVolume.map((user, index) => (
               <li key={user.id}>
-                {index + 1}. <Link href={`/creator/${user.name}`} className="underline">{user.name}</Link> — ${user.totalRevenue?.toFixed(2) ?? '0.00'}
+                {index + 1}. <Link href={`/creator/${user.name}`} className="underline">{user.name}</Link> — ${user.payoutTotal?.toFixed(2) ?? '0.00'}
               </li>
             ))}
           </ol>
