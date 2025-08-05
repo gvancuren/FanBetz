@@ -8,7 +8,7 @@ export default function DashboardClient({ user }: { user: any }) {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/stripe-onboarding', { method: 'POST' });
+      const res = await fetch('/api/stripe/connect', { method: 'POST' }); // ✅ updated
       const data = await res.json();
 
       if (!res.ok) {
