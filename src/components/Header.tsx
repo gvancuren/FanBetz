@@ -32,6 +32,7 @@ export default function Header() {
       <nav className="flex flex-wrap gap-4 justify-center sm:justify-end text-lg font-bold items-center text-white">
         <Link href="/" className="hover:text-yellow-400 transition">Home</Link>
         <Link href="/dashboard" className="hover:text-yellow-400 transition">Dashboard</Link>
+        <Link href="/competition" className="hover:text-yellow-400 transition">🏆 Competition</Link>
 
         {!session?.user ? (
           <>
