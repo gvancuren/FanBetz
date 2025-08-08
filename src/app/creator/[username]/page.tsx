@@ -147,10 +147,17 @@ export default async function Page({ params }: { params: { username: string } })
           <div className="mt-6 space-y-6">
             {!stripeReady ? (
               <div className="text-center">
-                {/* StripeConnectButton removed */}
                 <p className="text-red-400 mt-2 text-sm">
-                  Your Stripe account is not fully connected. Go to your dashboard to finish setup.
+                  Your Stripe account is not fully connected. Finish setup before posting.
                 </p>
+                <div className="mt-3">
+                  <Link
+                    href="/stripe-onboard"
+                    className="inline-block bg-yellow-400 text-black px-4 py-2 rounded font-bold hover:bg-yellow-300"
+                  >
+                    Connect Stripe
+                  </Link>
+                </div>
               </div>
             ) : (
               <CreatorSubscriptionForm
@@ -177,7 +184,22 @@ export default async function Page({ params }: { params: { username: string } })
           <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">
             💰 Create a Post
           </h2>
-          <CreatePostForm />
+
+          {!stripeReady ? (
+            <div className="text-center text-red-400">
+              ⚠️ You must finish connecting your Stripe account before posting.
+              <div className="mt-3">
+                <Link
+                  href="/stripe-onboard"
+                  className="inline-block bg-yellow-400 text-black px-4 py-2 rounded font-bold hover:bg-yellow-300"
+                >
+                  Connect Stripe
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <CreatePostForm />
+          )}
         </div>
       )}
 
@@ -226,7 +248,9 @@ export default async function Page({ params }: { params: { username: string } })
                   ) : (
                     <div className="relative rounded-lg overflow-hidden">
                       <div className="bg-black bg-opacity-70 p-4 rounded-lg">
-                        <p className="text-gray-400 italic mb-3">🔒 This post is locked. Unlock to see the content.</p>
+                        <p className="text-gray-400 italic mb-3">
+                          🔒 This post is locked. Unlock to see the content.
+                        </p>
                         <UnlockPostButton
                           postId={post.id.toString()}
                           creatorId={user.id.toString()}
