@@ -1,3 +1,4 @@
+// app/page.tsx
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import LikeButton from '@/components/LikeButton';
@@ -5,6 +6,18 @@ import CommentList from '@/components/CommentList';
 import CommentForm from '@/components/CommentForm';
 
 export const dynamic = 'force-dynamic'; // live updates on each request
+
+function formatStartLabel(d: Date | null, status?: string) {
+  if (status === 'LIVE') return 'LIVE';
+  if (!d) return '—';
+  const mm = d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  return mm;
+}
 
 export default async function Home() {
   // ---- New: upcoming picks (chronological + auto-hide) ----
@@ -18,12 +31,16 @@ export default async function Home() {
       completedAt: null,
       eventStartAt: { gte: cutoff },
     },
-    orderBy: { eventStartAt: 'asc' },
+    orderBy: [
+      // LIVE floats first, then earlier start times
+      { status: 'desc' }, // assumes 'LIVE' > 'PENDING' lexicographically; flip if your enum differs
+      { eventStartAt: 'asc' },
+    ],
     take: 24,
-    include: { user: true },
+    include: { user: true, likes: true, comments: true, unlocks: true },
   });
 
-  // ---- Existing: featured creators ----
+  // ---- Existing: featured creators -> top 10 by follower count ----
   const featuredCreators = await prisma.user.findMany({
     where: { isCreator: true },
     include: { followersList: true },
@@ -33,10 +50,10 @@ export default async function Home() {
     .sort((a, b) => b.followersList.length - a.followersList.length)
     .slice(0, 10);
 
-  // ✅ Updated: most recent posts (newest first)
-  const recentPosts = await prisma.post.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 10,
+  // ✅ Most recent (newest first, any status)
+  const recentPicks = await prisma.pick.findMany({
+    orderBy: [{ createdAt: 'desc' }],
+    take: 20,
     include: {
       user: true,
       likes: true,
@@ -45,172 +62,168 @@ export default async function Home() {
     },
   });
 
-  const sports = ['NFL', 'NBA', 'MLB', 'NHL', 'UFC', 'Soccer', 'Golf', 'NCAA'];
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white px-4 py-8 space-y-16">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 max-w-4xl mx-auto">
-        <h1 className="text-5xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
-          FanBetz.com
-        </h1>
-        <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
-        <p className="text-md text-gray-400">
-          Buy expert picks from top-ranked sports bettors.
-        </p>
-        <Link href="/signup">
-          <button className="mt-4 px-8 py-3 bg-yellow-400 text-black text-md font-bold rounded-xl hover:bg-yellow-300 shadow-xl transition-transform transform hover:scale-105">
-            Get Started
-          </button>
-        </Link>
-      </section>
-
-      {/* NEW: Upcoming Picks (chronological) */}
-      <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Upcoming Picks</h2>
-
-        {upcomingPicks.length === 0 ? (
-          <p className="text-center text-gray-400">No upcoming picks right now.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {upcomingPicks.map((p) => (
-              <Link
-                key={p.id}
-                href={`/creator/${p.user.name}`}
-                className="block bg-zinc-900 p-4 rounded-xl border border-yellow-500/40 hover:border-yellow-400 transition"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <img
-                    src={p.user.profileImage || '/default-avatar.png'}
-                    alt={p.user.name}
-                    className="w-10 h-10 rounded-full border border-yellow-400 object-cover"
-                  />
-                  <div>
-                    <p className="text-sm text-gray-300">
-                      {p.user.name} • <span className="text-yellow-400">{p.sport}</span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Intl.DateTimeFormat('en-US', {
-                        timeZone: 'America/Chicago',
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }).format(new Date(p.eventStartAt))}
-                    </p>
+    <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
+      {/* TOP CREATORS */}
+      <section>
+        <h2 className="text-xl font-semibold mb-3">Top Creators</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-3">
+          {topCreators.map((c) => (
+            <Link
+              key={c.id}
+              href={`/creator/${c.username ?? c.id}`}
+              className="rounded-2xl border p-4 hover:shadow-sm transition"
+            >
+              <div className="flex items-center gap-3">
+                {/* fallback circle if no profileImage */}
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                  {(c.username ?? 'C')[0]?.toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-medium truncate">
+                    {c.username ?? 'Creator'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {c.followersList.length} followers
                   </div>
                 </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-                <h3 className="text-lg font-semibold text-white line-clamp-2">
-                  {p.prediction}
-                </h3>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                  {p.teams} • {p.market}
-                </p>
-              </Link>
+      {/* UPCOMING PICKS */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-semibold">Upcoming Picks</h2>
+          <span className="text-xs text-gray-500">Auto-hides once the event starts</span>
+        </div>
+
+        {upcomingPicks.length === 0 ? (
+          <div className="text-sm text-gray-500">No upcoming picks right now.</div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {upcomingPicks.map((p) => (
+              <article
+                key={p.id}
+                className="rounded-2xl border p-4 hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Link
+                    href={`/creator/${p.user?.username ?? p.userId}`}
+                    className="font-medium hover:underline"
+                  >
+                    {p.user?.username ?? 'Creator'}
+                  </Link>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      p.status === 'LIVE'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {formatStartLabel(p.eventStartAt, p.status)}
+                  </span>
+                </div>
+
+                <div className="text-sm text-gray-800 mb-3">
+                  {/* Safely render core pick info if present; adjust field names as needed */}
+                  <div className="font-semibold">{p.title ?? 'Pick'}</div>
+                  {p.market && <div className="text-gray-600">{p.market}</div>}
+                  {p.selection && <div className="text-gray-600">{p.selection}</div>}
+                  {typeof p.price === 'number' && (
+                    <div className="mt-1 text-gray-700">
+                      Price: ${(p.price / 100).toFixed(2)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions / social */}
+                <div className="flex items-center justify-between">
+                  <LikeButton pickId={p.id} initialCount={p.likes?.length ?? 0} />
+                  <Link
+                    href={`/pick/${p.id}`}
+                    className="text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    View
+                  </Link>
+                </div>
+              </article>
             ))}
           </div>
         )}
       </section>
 
-      {/* Sports Categories Scrollable */}
-      <section className="w-full overflow-x-auto py-4 scrollbar-hide">
-        <div className="flex gap-4 px-6 sm:px-0 max-w-screen-lg mx-auto justify-start sm:justify-center">
-          {sports.map((sport) => (
-            <Link
-              key={sport}
-              href={`/${sport.toLowerCase()}`}
-              className="flex-shrink-0 bg-zinc-800 text-white border border-yellow-400 px-5 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition shadow-md text-sm font-semibold"
-            >
-              {sport}
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* MOST RECENT FEED */}
+      <section>
+        <h2 className="text-xl font-semibold mb-3">Most Recent</h2>
 
-      {/* Top Creators */}
-      <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Top Creators</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 px-2">
-          {topCreators.map((creator, i) => (
-            <Link
-              href={`/creator/${creator.name}`}
-              key={creator.id}
-              className="bg-zinc-900 p-3 rounded-xl border border-yellow-500 text-center hover:shadow-yellow-400/30 transition duration-300 transform hover:scale-105"
-            >
-              <div className="relative w-20 h-20 mx-auto mb-2">
-                <img
-                  src={creator.profileImage || '/default-avatar.png'}
-                  alt={creator.name}
-                  className="w-full h-full object-cover border-2 border-yellow-400 bg-zinc-800 rounded-full"
-                />
-              </div>
-              <h3 className="text-md font-bold text-yellow-400 truncate">{creator.name}</h3>
-              <p className="text-xs text-gray-400">{creator.followersList.length} followers</p>
-              <span className="mt-1 inline-block text-[10px] text-black bg-yellow-400 px-2 py-0.5 rounded-full font-semibold shadow">
-                #{i + 1}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Latest Posts (most recent) */}
-      <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Latest Posts</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {recentPosts.map((post, i) => {
-            const isUnlocked = post.price === 0;
-            return (
-              <div
-                key={post.id}
-                className="bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
+        {recentPicks.length === 0 ? (
+          <div className="text-sm text-gray-500">Nothing here yet.</div>
+        ) : (
+          <div className="space-y-4">
+            {recentPicks.map((p) => (
+              <article
+                key={p.id}
+                className="rounded-2xl border p-4 hover:shadow-sm transition"
               >
-                <h3 className="text-lg font-bold text-white line-clamp-2">#{i + 1} — {post.title}</h3>
-                <p className="text-xs text-yellow-500">
-                  by{' '}
-                  <Link href={`/creator/${post.user.name}`} className="underline hover:text-yellow-300">
-                    {post.user.name}
-                  </Link>{' '}
-                  — {post.price ? `$${(post.price / 100).toFixed(2)}` : 'Free'}
-                </p>
-
-                {isUnlocked ? (
-                  <>
-                    <p className="text-gray-300 text-xs whitespace-pre-wrap line-clamp-3">{post.content}</p>
-                    <LikeButton
-                      postId={post.id}
-                      userId={post.user.id}
-                      hasLiked={false}
-                      likeCount={post.likes.length}
-                    />
-                    <CommentList comments={post.comments} />
-                    <CommentForm postId={post.id} />
-                  </>
-                ) : (
-                  <>
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center rounded-lg">
-                        <p className="text-gray-400 italic text-sm">Locked — Unlock to view</p>
-                      </div>
-                      <div className="h-20 bg-zinc-800 rounded-lg" />
-                    </div>
-                    <LikeButton
-                      postId={post.id}
-                      userId={post.user.id}
-                      hasLiked={false}
-                      likeCount={post.likes.length}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <Link
-                      href={`/creator/${post.user.name}`}
-                      className="mt-1 inline-block text-yellow-400 font-medium hover:underline text-sm"
+                      href={`/creator/${p.user?.username ?? p.userId}`}
+                      className="font-medium hover:underline"
                     >
-                      Go to Profile to Unlock
+                      {p.user?.username ?? 'Creator'}
                     </Link>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(p.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="text-xs rounded-full bg-gray-100 text-gray-700 px-2 py-0.5">
+                    {p.status ?? 'POSTED'}
+                  </span>
+                </div>
+
+                <div className="mt-2">
+                  <Link
+                    href={`/pick/${p.id}`}
+                    className="text-base font-semibold hover:underline"
+                  >
+                    {p.title ?? 'Pick'}
+                  </Link>
+                  <div className="text-sm text-gray-700 mt-1">
+                    {p.market && <span className="mr-2">{p.market}</span>}
+                    {p.selection && <span className="mr-2">• {p.selection}</span>}
+                    {typeof p.price === 'number' && (
+                      <span className="mr-2">• ${(p.price / 100).toFixed(2)}</span>
+                    )}
+                    {p.eventStartAt && (
+                      <span>• {formatStartLabel(p.eventStartAt)}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Social row */}
+                <div className="mt-3 flex items-center justify-between">
+                  <LikeButton pickId={p.id} initialCount={p.likes?.length ?? 0} />
+                  <Link
+                    href={`/pick/${p.id}`}
+                    className="text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    Open
+                  </Link>
+                </div>
+
+                {/* Comments (collapsed by default in your UI; here we just render list/form placeholders) */}
+                <div className="mt-4">
+                  <CommentList comments={p.comments ?? []} />
+                  <CommentForm pickId={p.id} />
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
