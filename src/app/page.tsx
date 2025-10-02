@@ -35,7 +35,7 @@ export default async function Home() {
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white px-4 py-8 space-y-16">
       {/* Hero Section */}
       <section className="text-center space-y-6 max-w-4xl mx-auto">
-        <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
+        <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
           FanBetz.com
         </h1>
         <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
