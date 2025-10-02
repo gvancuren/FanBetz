@@ -7,6 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/* ───────────────────────── Enums for pick status/outcomes ───────────────────────── */
+
+enum PickStatus {
+  PENDING   // created, not started
+  LIVE      // in progress
+  SETTLED   // final result known
+}
+
+enum PickOutcome {
+  WIN
+  LOSS
+  PUSH
+  VOID
+}
+
+/* ───────────────────────── Models ───────────────────────── */
+
 model User {
   id              Int              @id @default(autoincrement())
   email           String           @unique
@@ -64,14 +81,39 @@ model Post {
 }
 
 model Pick {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
+  /* Legacy/simple fields (kept for compatibility) */
   sport      String
   teams      String
   market     String
   prediction String
-  createdAt  DateTime @default(now())
+
+  createdAt  DateTime  @default(now())
   userId     Int
-  user       User     @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  /* ── New: timing & settlement fields for chronological listing and auto-hide ── */
+  eventStartAt DateTime
+  status       PickStatus  @default(PENDING)
+  outcome      PickOutcome?
+  completedAt  DateTime?
+  settledAt    DateTime?
+  gradedBy     String?     // "auto" or "manual:<userId>"
+
+  /* ── New: structured fields for AI parsing + provider matching (optional) ── */
+  league     String?       // e.g., "MLB", "NFL"
+  eventId    String?       // provider’s canonical event id
+  homeTeam   String?
+  awayTeam   String?
+  marketType String?       // "MONEYLINE" | "SPREAD" | "TOTAL" | "PROP"
+  selection  String?       // e.g., "Cubs -1.5", "Over 8.5"
+  line       Float?
+  odds       Int?
+
+  @@index([eventStartAt])
+  @@index([status])
+  @@index([completedAt])
+  @@index([league, eventId])
 }
 
 model PostUnlock {

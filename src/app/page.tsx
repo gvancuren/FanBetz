@@ -4,9 +4,26 @@ import LikeButton from '@/components/LikeButton';
 import CommentList from '@/components/CommentList';
 import CommentForm from '@/components/CommentForm';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; // live updates on each request
 
 export default async function Home() {
+  // ---- Upcoming picks (chronological + auto-hide) ----
+  const now = new Date();
+  const graceMs = 2 * 60 * 1000;
+  const cutoff = new Date(now.getTime() + graceMs);
+
+  const upcomingPicks = await prisma.pick.findMany({
+    where: {
+      status: { in: ['PENDING', 'LIVE'] },
+      completedAt: null,
+      eventStartAt: { gte: cutoff },
+    },
+    orderBy: { eventStartAt: 'asc' },
+    take: 24,
+    include: { user: true },
+  });
+
+  // ---- Top creators ----
   const featuredCreators = await prisma.user.findMany({
     where: { isCreator: true },
     include: { followersList: true },
@@ -16,12 +33,10 @@ export default async function Home() {
     .sort((a, b) => b.followersList.length - a.followersList.length)
     .slice(0, 10);
 
-  const trendingPosts = await prisma.post.findMany({
-    orderBy: [
-      { likes: { _count: 'desc' } },
-      { createdAt: 'desc' },
-    ],
-    take: 10,
+  // ✅ Trending Picks = most recent posts (12), stable newest-first
+  const recentPosts = await prisma.post.findMany({
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: 12,
     include: {
       user: true,
       likes: true,
@@ -40,14 +55,54 @@ export default async function Home() {
           FanBetz.com
         </h1>
         <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
-        <p className="text-md text-gray-400">
-          Buy expert picks from top-ranked sports bettors.
-        </p>
+        <p className="text-md text-gray-400">Buy expert picks from top-ranked sports bettors.</p>
         <Link href="/signup">
           <button className="mt-4 px-8 py-3 bg-yellow-400 text-black text-md font-bold rounded-xl hover:bg-yellow-300 shadow-xl transition-transform transform hover:scale-105">
             Get Started
           </button>
         </Link>
+      </section>
+
+      {/* Upcoming Picks (chronological) */}
+      <section className="max-w-6xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-8">Upcoming Picks</h2>
+
+        {upcomingPicks.length === 0 ? (
+          <p className="text-center text-gray-400">No upcoming picks right now.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {upcomingPicks.map((p) => (
+              <Link
+                key={p.id}
+                href={`/creator/${p.user.name}`}
+                className="block bg-zinc-900 p-4 rounded-xl border border-yellow-500/40 hover:border-yellow-400 transition"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <img
+                    src={p.user.profileImage || '/default-avatar.png'}
+                    alt={p.user.name}
+                    className="w-10 h-10 rounded-full border border-yellow-400 object-cover"
+                  />
+                  <div>
+                    <p className="text-sm text-gray-300">
+                      {p.user.name} • <span className="text-yellow-400">{p.sport}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'America/Chicago',
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(new Date(p.eventStartAt))}
+                    </p>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold text-white line-clamp-2">{p.prediction}</h3>
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{p.teams} • {p.market}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Sports Categories Scrollable */}
@@ -65,9 +120,20 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Top Creators */}
+      {/* Top Creators (boxed, bold, exciting) */}
       <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Top Creators</h2>
+        <div className="mx-auto mb-8 max-w-fit relative">
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-yellow-500/40 via-amber-400/40 to-yellow-500/40 blur-md"></div>
+          <div className="relative rounded-2xl border border-yellow-400/70 bg-black/60 px-6 py-3 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-yellow-200 drop-shadow">
+              Top Creators
+            </h2>
+            <p className="mt-1 text-[11px] uppercase tracking-widest text-yellow-400/80">
+              FanBetz Elite • Live Rankings
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 px-2">
           {topCreators.map((creator, i) => (
             <Link
@@ -92,18 +158,34 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trending Picks */}
+      {/* Trending Picks (12 newest, boxed title, vibrant pick titles) */}
       <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Trending Picks</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {trendingPosts.map((post, i) => {
+        <div className="mx-auto mb-8 max-w-fit relative">
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-yellow-500/40 via-amber-400/40 to-yellow-500/40 blur-md"></div>
+          <div className="relative rounded-2xl border border-yellow-400/70 bg-black/60 px-6 py-3 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-yellow-200 drop-shadow">
+              Trending Picks
+            </h2>
+            <p className="mt-1 text-[11px] uppercase tracking-widest text-yellow-400/80">
+              12 Newest • Updated Live
+            </p>
+          </div>
+        </div>
+
+        {/* 1 column on phones, 2 columns on sm+ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {recentPosts.map((post, i) => {
             const isUnlocked = post.price === 0;
             return (
               <div
                 key={post.id}
-                className="bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
+                className="group bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
               >
-                <h3 className="text-lg font-bold text-white line-clamp-2">#{i + 1} — {post.title}</h3>
+                {/* Vibrant pick title */}
+                <h3 className="text-xl sm:text-2xl font-extrabold leading-tight bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent group-hover:from-yellow-200 group-hover:via-yellow-300 group-hover:to-amber-200 transition-colors line-clamp-2">
+                  #{i + 1} — {post.title}
+                </h3>
+
                 <p className="text-xs text-yellow-500">
                   by{' '}
                   <Link href={`/creator/${post.user.name}`} className="underline hover:text-yellow-300">
@@ -127,7 +209,7 @@ export default async function Home() {
                 ) : (
                   <>
                     <div className="relative">
-                      <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center rounded-lg">
+                      <div className="absolute inset-0 bg-black/90 flex items-center justify-center rounded-lg">
                         <p className="text-gray-400 italic text-sm">Locked — Unlock to view</p>
                       </div>
                       <div className="h-20 bg-zinc-800 rounded-lg" />
