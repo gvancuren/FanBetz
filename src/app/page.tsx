@@ -7,9 +7,9 @@ import CommentForm from '@/components/CommentForm';
 export const dynamic = 'force-dynamic'; // live updates on each request
 
 export default async function Home() {
-  // ---- New: upcoming picks (chronological + auto-hide) ----
+  // ---- Upcoming picks (chronological + auto-hide) ----
   const now = new Date();
-  const graceMs = 2 * 60 * 1000; // 2-minute buffer so cards don't vanish at the exact second
+  const graceMs = 2 * 60 * 1000;
   const cutoff = new Date(now.getTime() + graceMs);
 
   const upcomingPicks = await prisma.pick.findMany({
@@ -23,7 +23,7 @@ export default async function Home() {
     include: { user: true },
   });
 
-  // ---- Existing: featured creators / trending posts ----
+  // ---- Top creators ----
   const featuredCreators = await prisma.user.findMany({
     where: { isCreator: true },
     include: { followersList: true },
@@ -33,12 +33,10 @@ export default async function Home() {
     .sort((a, b) => b.followersList.length - a.followersList.length)
     .slice(0, 10);
 
-  const trendingPosts = await prisma.post.findMany({
-    orderBy: [
-      { likes: { _count: 'desc' } },
-      { createdAt: 'desc' },
-    ],
-    take: 10,
+  // ✅ Top Picks = most recent posts (12), stable newest-first
+  const recentPosts = await prisma.post.findMany({
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: 12,
     include: {
       user: true,
       likes: true,
@@ -57,9 +55,7 @@ export default async function Home() {
           FanBetz.com
         </h1>
         <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
-        <p className="text-md text-gray-400">
-          Buy expert picks from top-ranked sports bettors.
-        </p>
+        <p className="text-md text-gray-400">Buy expert picks from top-ranked sports bettors.</p>
         <Link href="/signup">
           <button className="mt-4 px-8 py-3 bg-yellow-400 text-black text-md font-bold rounded-xl hover:bg-yellow-300 shadow-xl transition-transform transform hover:scale-105">
             Get Started
@@ -67,7 +63,7 @@ export default async function Home() {
         </Link>
       </section>
 
-      {/* NEW: Upcoming Picks (chronological) */}
+      {/* Upcoming Picks (chronological) */}
       <section className="max-w-6xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-8">Upcoming Picks</h2>
 
@@ -101,12 +97,8 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <h3 className="text-lg font-semibold text-white line-clamp-2">
-                  {p.prediction}
-                </h3>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                  {p.teams} • {p.market}
-                </p>
+                <h3 className="text-lg font-semibold text-white line-clamp-2">{p.prediction}</h3>
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{p.teams} • {p.market}</p>
               </Link>
             ))}
           </div>
@@ -155,18 +147,22 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trending Picks (posts) */}
+      {/* Top Picks (12 newest, 2-up layout, vibrant titles) */}
       <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Trending Picks</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {trendingPosts.map((post, i) => {
+        <h2 className="text-3xl font-bold text-center mb-8">Top Picks</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {recentPosts.map((post, i) => {
             const isUnlocked = post.price === 0;
             return (
               <div
                 key={post.id}
-                className="bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
+                className="group bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
               >
-                <h3 className="text-lg font-bold text-white line-clamp-2">#{i + 1} — {post.title}</h3>
+                {/* brighter, more vibrant title */}
+                <h3 className="text-xl sm:text-2xl font-extrabold leading-tight bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent group-hover:from-yellow-200 group-hover:via-yellow-300 group-hover:to-amber-200 transition-colors line-clamp-2">
+                  #{i + 1} — {post.title}
+                </h3>
+
                 <p className="text-xs text-yellow-500">
                   by{' '}
                   <Link href={`/creator/${post.user.name}`} className="underline hover:text-yellow-300">
@@ -190,7 +186,7 @@ export default async function Home() {
                 ) : (
                   <>
                     <div className="relative">
-                      <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center rounded-lg">
+                      <div className="absolute inset-0 bg-black/90 flex items-center justify-center rounded-lg">
                         <p className="text-gray-400 italic text-sm">Locked — Unlock to view</p>
                       </div>
                       <div className="h-20 bg-zinc-800 rounded-lg" />
