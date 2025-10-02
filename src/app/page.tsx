@@ -7,22 +7,6 @@ import CommentForm from '@/components/CommentForm';
 export const dynamic = 'force-dynamic'; // live updates on each request
 
 export default async function Home() {
-  // ---- Upcoming picks (chronological + auto-hide) ----
-  const now = new Date();
-  const graceMs = 2 * 60 * 1000;
-  const cutoff = new Date(now.getTime() + graceMs);
-
-  const upcomingPicks = await prisma.pick.findMany({
-    where: {
-      status: { in: ['PENDING', 'LIVE'] },
-      completedAt: null,
-      eventStartAt: { gte: cutoff },
-    },
-    orderBy: { eventStartAt: 'asc' },
-    take: 24,
-    include: { user: true },
-  });
-
   // ---- Top creators ----
   const featuredCreators = await prisma.user.findMany({
     where: { isCreator: true },
@@ -51,7 +35,7 @@ export default async function Home() {
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white px-4 py-8 space-y-16">
       {/* Hero Section */}
       <section className="text-center space-y-6 max-w-4xl mx-auto">
-        <h1 className="text-5xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
+        <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-yellow-400 drop-shadow-lg animate-fade-in">
           FanBetz.com
         </h1>
         <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
@@ -61,48 +45,6 @@ export default async function Home() {
             Get Started
           </button>
         </Link>
-      </section>
-
-      {/* Upcoming Picks (chronological) */}
-      <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Upcoming Picks</h2>
-
-        {upcomingPicks.length === 0 ? (
-          <p className="text-center text-gray-400">No upcoming picks right now.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {upcomingPicks.map((p) => (
-              <Link
-                key={p.id}
-                href={`/creator/${p.user.name}`}
-                className="block bg-zinc-900 p-4 rounded-xl border border-yellow-500/40 hover:border-yellow-400 transition"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <img
-                    src={p.user.profileImage || '/default-avatar.png'}
-                    alt={p.user.name}
-                    className="w-10 h-10 rounded-full border border-yellow-400 object-cover"
-                  />
-                  <div>
-                    <p className="text-sm text-gray-300">
-                      {p.user.name} • <span className="text-yellow-400">{p.sport}</span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Intl.DateTimeFormat('en-US', {
-                        timeZone: 'America/Chicago',
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }).format(new Date(p.eventStartAt))}
-                    </p>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-semibold text-white line-clamp-2">{p.prediction}</h3>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{p.teams} • {p.market}</p>
-              </Link>
-            ))}
-          </div>
-        )}
       </section>
 
       {/* Sports Categories Scrollable */}
