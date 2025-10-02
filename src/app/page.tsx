@@ -33,7 +33,7 @@ export default async function Home() {
     .sort((a, b) => b.followersList.length - a.followersList.length)
     .slice(0, 10);
 
-  // ✅ Top Picks = most recent posts (12), stable newest-first
+  // ✅ Trending Picks = most recent posts (12), stable newest-first
   const recentPosts = await prisma.post.findMany({
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 12,
@@ -120,9 +120,20 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Top Creators */}
+      {/* Top Creators (boxed, bold, exciting) */}
       <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Top Creators</h2>
+        <div className="mx-auto mb-8 max-w-fit relative">
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-yellow-500/40 via-amber-400/40 to-yellow-500/40 blur-md"></div>
+          <div className="relative rounded-2xl border border-yellow-400/70 bg-black/60 px-6 py-3 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-yellow-200 drop-shadow">
+              Top Creators
+            </h2>
+            <p className="mt-1 text-[11px] uppercase tracking-widest text-yellow-400/80">
+              FanBetz Elite • Live Rankings
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 px-2">
           {topCreators.map((creator, i) => (
             <Link
@@ -147,9 +158,21 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Top Picks (12 newest, 2-up layout, vibrant titles) */}
+      {/* Trending Picks (12 newest, boxed title, vibrant pick titles) */}
       <section className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8">Top Picks</h2>
+        <div className="mx-auto mb-8 max-w-fit relative">
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-yellow-500/40 via-amber-400/40 to-yellow-500/40 blur-md"></div>
+          <div className="relative rounded-2xl border border-yellow-400/70 bg-black/60 px-6 py-3 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-yellow-200 drop-shadow">
+              Trending Picks
+            </h2>
+            <p className="mt-1 text-[11px] uppercase tracking-widest text-yellow-400/80">
+              12 Newest • Updated Live
+            </p>
+          </div>
+        </div>
+
+        {/* 1 column on phones, 2 columns on sm+ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {recentPosts.map((post, i) => {
             const isUnlocked = post.price === 0;
@@ -158,7 +181,7 @@ export default async function Home() {
                 key={post.id}
                 className="group bg-zinc-900 p-4 rounded-xl border border-zinc-700 hover:shadow-xl transition space-y-3"
               >
-                {/* brighter, more vibrant title */}
+                {/* Vibrant pick title */}
                 <h3 className="text-xl sm:text-2xl font-extrabold leading-tight bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-300 bg-clip-text text-transparent group-hover:from-yellow-200 group-hover:via-yellow-300 group-hover:to-amber-200 transition-colors line-clamp-2">
                   #{i + 1} — {post.title}
                 </h3>
