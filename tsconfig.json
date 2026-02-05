@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -11,13 +15,17 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "baseUrl": "src", // ✅ Added for non-relative import resolution
     "paths": {
-      "@/*": ["*"] // ✅ Updated so @/lib/something resolves to src/lib/something
+      "@/*": [
+        "*"
+      ] // ✅ Updated so @/lib/something resolves to src/lib/something
     },
-    "types": ["next-auth"],
+    "types": [
+      "next-auth"
+    ],
     "plugins": [
       {
         "name": "next"
@@ -29,7 +37,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types"
+    "types",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
