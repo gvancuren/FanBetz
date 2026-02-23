@@ -27,7 +27,6 @@ export default function Header() {
       <div className="w-full sm:max-w-sm sm:flex-1 flex justify-center px-4">
         <SearchBar />
       </div>
-
       {/* Navigation */}
       <nav className="flex flex-wrap gap-4 justify-center sm:justify-end text-lg font-bold items-center text-white">
         <Link href="/" className="hover:text-yellow-400 transition">Home</Link>
