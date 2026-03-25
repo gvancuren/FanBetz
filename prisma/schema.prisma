@@ -25,32 +25,35 @@ enum PickOutcome {
 /* ───────────────────────── Models ───────────────────────── */
 
 model User {
-  id              Int              @id @default(autoincrement())
-  email           String           @unique
-  name            String           @unique
-  isCreator       Boolean          @default(false)
-  createdAt       DateTime         @default(now())
+  id              Int                @id @default(autoincrement())
+  email           String             @unique
+  name            String             @unique
+  isCreator       Boolean            @default(false)
+  isBot           Boolean            @default(false)
+  isOfficialModel Boolean            @default(false)
+  botType         String?
+  createdAt       DateTime           @default(now())
   profileImage    String?
   bio             String?
   password        String?
   monthlyPrice    Int?
   weeklyPrice     Int?
-  earnings        Int              @default(0)
-  payoutTotal     Int              @default(0)
+  earnings        Int                @default(0)
+  payoutTotal     Int                @default(0)
   stripeAccountId String?
   monthlyPriceId  String?
   stripeProductId String?
   weeklyPriceId   String?
 
   comments        Comment[]
-  followingList   Follow[]         @relation("Following")
-  followersList   Follow[]         @relation("Followers")
+  followingList   Follow[]           @relation("Following")
+  followersList   Follow[]           @relation("Followers")
   picks           Pick[]
   posts           Post[]
   postLikes       PostLike[]
   postUnlocks     PostUnlock[]
-  subscribers     Subscription[]   @relation("Creator")
-  subscriptions   Subscription[]   @relation("Subscriber")
+  subscribers     Subscription[]     @relation("Creator")
+  subscriptions   Subscription[]     @relation("Subscriber")
   resetTokens     PasswordResetToken[]
 }
 

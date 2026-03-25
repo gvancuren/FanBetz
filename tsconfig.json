@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
     "baseUrl": "src", // ✅ Added for non-relative import resolution
     "paths": {
@@ -38,7 +38,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "types",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "scripts/createBots.js"
   ],
   "exclude": [
     "node_modules"

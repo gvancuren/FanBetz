@@ -21,7 +21,7 @@ export default function TeamPage() {
             <h3 className="text-2xl font-semibold text-white">Gunnar Van Curen</h3>
             <p className="text-sm text-gray-400 mt-1">Founder & CEO</p>
             <p className="text-gray-300 mt-2 text-base max-w-lg">
-              Navy SEAL veteran, business leader, and the visionary behind FanBetz. Gunnar leads product, brand, and partnerships with relentless energy and purpose.
+              Gunnar Van Curen is the founder of FanBetz, a platform built to help sports betting creators monetize their insight and build direct relationships with their audience. A Navy SEAL veteran with a background in leadership and execution, he is focused on building a premium, creator-first marketplace for sports betting content.
             </p>
           </div>
         </div>
