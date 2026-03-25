@@ -1,5 +1,3 @@
-// src/app/creator/[username]/page.tsx
-
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -21,6 +19,7 @@ export const dynamic = 'force-dynamic';
 
 async function isStripeFullyConnected(stripeAccountId: string): Promise<boolean> {
   if (!stripeAccountId || !process.env.STRIPE_SECRET_KEY) return false;
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: '2025-06-30.basil',
   });
@@ -72,6 +71,7 @@ export default async function Page({ params }: { params: { username: string } })
   const now = new Date();
   const activeSubscription = user.subscribers.find((sub) => new Date(sub.expiresAt) > now);
   const isSubscribed = !!activeSubscription;
+
   const stripeReady = user.stripeAccountId
     ? await isStripeFullyConnected(user.stripeAccountId)
     : false;
@@ -80,7 +80,6 @@ export default async function Page({ params }: { params: { username: string } })
     <div className="max-w-5xl mx-auto px-6 py-12 text-white space-y-10">
       <RefreshOnUnlock />
 
-      {/* Profile Header */}
       <div className="bg-zinc-900 p-10 rounded-2xl shadow-xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start sm:gap-8">
           {isOwner ? (
@@ -130,11 +129,13 @@ export default async function Page({ params }: { params: { username: string } })
                 View Followers
               </Link>
             </p>
+
             {!isOwner && viewerId && (
               <div className="mt-3">
                 <FollowButton creatorId={user.id} isFollowingInitial={isFollowing} />
               </div>
             )}
+
             {isSubscribed && (
               <p className="text-green-400 text-sm mt-2 font-medium">
                 ✅ Subscribed – all posts unlocked
@@ -205,28 +206,31 @@ export default async function Page({ params }: { params: { username: string } })
 
       <div className="bg-zinc-900 p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold mb-4 border-b border-zinc-700 pb-2">Posts</h2>
+
         <div className="space-y-6">
           {user.posts?.length === 0 ? (
             <p className="text-gray-400 italic">No posts yet.</p>
           ) : (
             user.posts.map((post) => {
+              const isFree = !post.price || post.price <= 0;
               const isUnlocked =
-                isSubscribed || post.unlocks.some((unlock) => unlock.userId === viewerId);
+                isFree || isSubscribed || post.unlocks.some((unlock) => unlock.userId === viewerId);
+
               return (
                 <div
                   key={post.id}
                   className="bg-zinc-800 rounded-2xl p-5 border border-zinc-700 hover:shadow-xl transition space-y-4"
                 >
                   <h3 className="text-xl font-bold">{post.title}</h3>
+
                   <p className="text-yellow-400 font-medium">
-                    {post.price && post.price > 0
-                      ? `$${(post.price / 100).toFixed(2)} to unlock`
-                      : 'Free'}
+                    {isFree ? 'Free' : `$${(post.price / 100).toFixed(2)} to unlock`}
                   </p>
 
                   {isUnlocked ? (
                     <>
                       <p className="text-gray-300 whitespace-pre-wrap">{post.content}</p>
+
                       {post.imageUrl && (
                         <img
                           src={post.imageUrl}
@@ -234,6 +238,7 @@ export default async function Page({ params }: { params: { username: string } })
                           className="w-full rounded-lg object-cover max-h-[400px]"
                         />
                       )}
+
                       <div className="mt-2">
                         <LikeButton
                           postId={post.id}
@@ -242,6 +247,7 @@ export default async function Page({ params }: { params: { username: string } })
                           likeCount={post.likes.length}
                         />
                       </div>
+
                       <CommentList comments={post.comments} />
                       <CommentForm postId={post.id} />
                     </>
@@ -251,6 +257,7 @@ export default async function Page({ params }: { params: { username: string } })
                         <p className="text-gray-400 italic mb-3">
                           🔒 This post is locked. Unlock to see the content.
                         </p>
+
                         <UnlockPostButton
                           postId={post.id.toString()}
                           creatorId={user.id.toString()}
@@ -259,6 +266,7 @@ export default async function Page({ params }: { params: { username: string } })
                       </div>
                     </div>
                   )}
+
                   <p className="text-sm text-gray-500">
                     Posted: {new Date(post.createdAt).toLocaleString()}
                   </p>
