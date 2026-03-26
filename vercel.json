@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/post-ai-picks",
-      "schedule": "0 3 * * *"
+      "schedule": "1 3 * * *"
     }
   ]
 }

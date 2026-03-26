@@ -43,7 +43,7 @@ export default async function Home() {
           FanBetz.com
         </h1>
         <p className="text-xl text-gray-300">Bet Smarter. Win Bigger.</p>
-        <p className="text-md text-gray-400">Buy expert picks from top-ranked sports bettors.</p>
+        <p className="text-md text-gray-400">Unlock premium picks from the sharpest bettors in the game</p>
         <Link href="/signup">
           <button className="mt-4 px-8 py-3 bg-yellow-400 text-black text-md font-bold rounded-xl hover:bg-yellow-300 shadow-xl transition-transform transform hover:scale-105">
             Get Started
